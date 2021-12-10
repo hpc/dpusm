@@ -1,4 +1,5 @@
 # Data Processing Unit Services Module (DPUSM)
+[![DPUSM](https://github.com/hpc/dpusm/actions/workflows/dpusm.yml/badge.svg)](https://github.com/hpc/dpusm/actions/workflows/dpusm.yml)
 
 The Data Processing Unit Services Module is a Linux Kernel Module that exposes a unified interface for accelerators to provide useful file system operations such as compression, checksumming, and erasure coding. Accelerators will interface with the DPUSM using the provider API to create providers. These providers will register with the DPUSM. Third parties will then use the user interface to find and use registered providers to accelerate operations.
 
