@@ -4,6 +4,7 @@
 
 typedef enum alloc_type {
     ALLOC_REAL,
+    ALLOC_REF,
     ALLOC_INVALID,
 } alloc_type_t;
 
@@ -51,6 +52,23 @@ dpusm_provider_alloc(size_t size) {
     return alloc;
 }
 
+void *
+dpusm_provider_alloc_ref(void *src, size_t offset, size_t size) {
+    if (!src) {
+        return NULL;
+    }
+
+    alloc_t *src_handle = (alloc_t *) src;
+    alloc_t *ref = kmalloc(sizeof(alloc_t), GFP_KERNEL);
+    if (ref) {
+        ref->type = ALLOC_REF;
+        ref->ptr = ptr_offset(src_handle->ptr, offset);
+        ref->size = size;
+    }
+
+    return ref;
+}
+
 void
 dpusm_provider_free(void *handle) {
     alloc_t *alloc = (alloc_t *) handle;
@@ -59,6 +77,7 @@ dpusm_provider_free(void *handle) {
             case ALLOC_REAL:
                 kfree(alloc->ptr);
                 break;
+            case ALLOC_REF:
             case ALLOC_INVALID:
             default:
                 break;
@@ -97,6 +116,7 @@ dpusm_provider_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
 const dpusm_pf_t example_dpusm_provider_functions = {
     .capabilities       = dpusm_provider_capabilities,
     .alloc              = dpusm_provider_alloc,
+    .alloc_ref          = dpusm_provider_alloc_ref,
     .free               = dpusm_provider_free,
     .copy_from_mem      = dpusm_provider_copy_from_mem,
     .copy_to_mem        = dpusm_provider_copy_to_mem,
@@ -104,6 +124,7 @@ const dpusm_pf_t example_dpusm_provider_functions = {
     .zero_fill          = NULL,
     .all_zeros          = NULL,
     .create_gang        = NULL,
+    .realign            = NULL,
     .bulk_from_mem      = NULL,
     .bulk_to_mem        = NULL,
     .compress           = NULL,

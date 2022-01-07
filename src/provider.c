@@ -39,14 +39,15 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
     }
 
     /*
-      active, zero_fill, all_zeros, create_gang, compress, decompress, and
-      checksum may be defined as needed. They are not grouped together
-      like the other functions.
+      active, zero_fill, all_zeros, create_gang, realign, compress,
+      decompress, and checksum may be defined as needed. They are not
+      grouped together like the other functions.
     */
 
     const int required = (
         !!funcs->capabilities +
         !!funcs->alloc +
+        !!funcs->alloc_ref +
         !!funcs->free +
         !!funcs->copy_from_mem +
         !!funcs->copy_to_mem);
@@ -79,7 +80,7 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
 
     // get bitmap of bad function groups
     const int rc = (
-        (!(required == 5)?DPUSM_PROVIDER_BAD_REQUIRED:0) |
+        (!(required == 6)?DPUSM_PROVIDER_BAD_REQUIRED:0) |
         (!((bulk == 0) || (bulk == 2))?DPUSM_PROVIDER_BAD_BULK:0) |
         (!((raid_gen == 0) || (raid_gen == 3))?DPUSM_PROVIDER_BAD_RAID_GEN:0) |
         (!((raid_rec == 0) || ((raid_gen == 3) && (raid_rec == 3)))?DPUSM_PROVIDER_BAD_RAID_REC:0) |

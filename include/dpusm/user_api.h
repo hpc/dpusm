@@ -32,6 +32,9 @@ typedef struct dpusm_user_functions {
     /* get a new handle */
     void *(*alloc)(void *provider, size_t size);
 
+    /* reference an existing handle */
+    void *(*alloc_ref)(void *src, size_t offset, size_t size);
+
     /* free a handle */
     void (*free)(void *handle);
 
@@ -46,7 +49,7 @@ typedef struct dpusm_user_functions {
      */
 
     /*
-     * amount memory allocated
+     * amount of memory allocated
      * definitions of count/size vs actual_count/actual_size
      * will depend on the provider
      */
@@ -61,6 +64,9 @@ typedef struct dpusm_user_functions {
 
     /* effectively an array of allocations */
     void *(*create_gang)(void **handles, size_t count);
+
+    /* move (if necessary) a buffer to an aligned address */
+    int (*realign)(void *src, void **dst, size_t aligned_size, size_t alignment);
 
     /*
      * Data is passed in with the bufs array for transfer between the
@@ -87,10 +93,13 @@ typedef struct dpusm_user_functions {
         void *data, size_t size, void *cksum);
 
     struct {
-        /* parity_col_dpusm_handles are created by the caller */
-        void *(*alloc)(uint64_t raidn, uint64_t acols,
-            void *src_handle, uint64_t *sizes,
-            void **parity_col_dpusm_handles);
+        /*
+         * col_dpusm_handles order:
+         *     [0, raidn)    - parity
+         *     [raidn, cols) - data
+         */
+        void *(*alloc)(uint64_t raidn, uint64_t cols,
+            void *src_handle, void **col_dpusm_handles);
 
         void (*free)(void *raid);
 

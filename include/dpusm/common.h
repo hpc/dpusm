@@ -19,6 +19,7 @@ typedef enum {
     DPUSM_OPTIONAL_CREATE_GANG   = 1 << 2,
     DPUSM_OPTIONAL_BULK_FROM_MEM = 1 << 3,
     DPUSM_OPTIONAL_BULK_TO_MEM   = 1 << 4,
+    DPUSM_OPTIONAL_REALIGN       = 1 << 5,
 } dpusm_optional_t;
 
 /* used for both compression and decompression */
@@ -69,6 +70,18 @@ typedef struct dpusm_provider_capabilities {
     int io;
 } dpusm_pc_t;
 
+/* expects only one bit will be set, so only returns first set bit */
+static inline int enum2index(int mask) {
+	if (mask == 0) return -1;
+
+    int index = 0;
+    while (!(mask & 1)) {
+        mask >>= 1;
+        index++;
+    }
+    return index;
+}
+
 /*
  * use this struct to copy data to and from offloader memory
  *
@@ -81,6 +94,8 @@ typedef struct dpusm_move {
 } dpusm_mv_t;
 
 typedef void (*dpusm_disk_write_completion_t)(void *ptr, int error);
+typedef dpusm_disk_write_completion_t dpusm_dwc_t;
 typedef void (*dpusm_disk_flush_completion_t)(void *ptr, int error);
+typedef dpusm_disk_flush_completion_t dpusm_dfc_t;
 
 #endif

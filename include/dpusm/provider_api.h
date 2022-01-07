@@ -15,6 +15,9 @@ typedef struct dpusm_provider_functions {
     /* get a new offloader handle */
     void *(*alloc)(size_t size);
 
+    /* reference an existing handle */
+    void *(*alloc_ref)(void *src, size_t offset, size_t size);
+
     /* free an offloader handle */
     void (*free)(void *handle);
 
@@ -45,6 +48,9 @@ typedef struct dpusm_provider_functions {
     /* effectively an array of allocations */
     void *(*create_gang)(void **handles, size_t count);
 
+    /* move (if necessary) a buffer to an aligned address */
+    int (*realign)(void *src, void **dst, size_t aligned_size, size_t alignment);
+
     /*
      * Data is passed in with the bufs array for transfer between the
      * offloader and memory.
@@ -70,10 +76,13 @@ typedef struct dpusm_provider_functions {
         void *data, size_t size, void *cksum);
 
     struct {
-        /* parity_col_dpusm_handles are created by the caller */
+        /*
+         * col_provider_handles order:
+         *     [0, raidn)    - parity
+         *     [raidn, cols) - data
+         */
         void *(*alloc)(uint64_t raidn, uint64_t acols,
-            void *src_handle, uint64_t *sizes,
-            void **parity_col_dpusm_handles);
+            void **col_provider_handles);
 
         void (*free)(void *raid);
 

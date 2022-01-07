@@ -124,6 +124,18 @@ dpusm_alloc(void *provider, size_t size) {
     return dpusm_handle_construct(provider, FUNCS(provider)->alloc(size));
 }
 
+static void *
+dpusm_alloc_ref(void *src, size_t offset, size_t size) {
+    if (!src) {
+        return NULL;
+    }
+
+    CHECK_HANDLE(src, dpusmh, NULL);
+    return dpusm_handle_construct(dpusmh->provider,
+        FUNCS(dpusmh->provider)->alloc_ref(dpusmh->handle,
+        offset, size));
+}
+
 static void
 dpusm_free(void *handle) {
     if (!handle) {
@@ -133,8 +145,8 @@ dpusm_free(void *handle) {
     dpusm_handle_t *dpusmh = (dpusm_handle_t *) handle;
     if (dpusm_provider_sane(dpusmh->provider) == DPUSM_OK) {
         FUNCS(dpusmh->provider)->free(dpusmh->handle);
-        dpusm_handle_free(dpusmh);
     }
+    dpusm_handle_free(dpusmh);
 }
 
 static int
@@ -247,6 +259,37 @@ dpusm_create_gang(void **handles, size_t count) {
 }
 
 static int
+dpusm_realign(void *src, void **dst, size_t aligned_size, size_t alignment) {
+    CHECK_HANDLE(src, src_dpusmh, DPUSM_ERROR);
+
+    /* realign is optional */
+    if (!FUNCS(src_dpusmh->provider)->realign) {
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
+    if (!dst) {
+        return DPUSM_ERROR;
+    }
+
+    void *dst_provider_handle = NULL;
+    const int rc = FUNCS(src_dpusmh->provider)->realign(src_dpusmh->handle,
+        &dst_provider_handle, aligned_size, alignment);
+    if (rc != DPUSM_OK) {
+        return rc;
+    }
+
+    /* nothing done */
+    if (src_dpusmh->handle == dst_provider_handle) {
+        *dst = src;
+    }
+    /* data was copied into a new handle */
+    else {
+        *dst = dpusm_handle_construct(src_dpusmh->provider, dst_provider_handle);
+    }
+    return rc;
+}
+
+static int
 dpusm_bulk_from_mem(void *handle, void **bufs, size_t *sizes, size_t count) {
     CHECK_HANDLE(handle, dpusmh, DPUSM_ERROR);
 
@@ -336,7 +379,7 @@ dpusm_raid_free(void *raid) {
 
 static void *
 dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
-    uint64_t *sizes, void **parity_col_dpusm_handles) {
+    void **col_dpusm_handles) {
     CHECK_HANDLE(src_handle, src_dpusmh, NULL);
     void *provider = src_dpusmh->provider;
 
@@ -347,52 +390,44 @@ dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
 
     int good = 1;
 
-    /* get provider handles out of the dpusm handles */
-    void **parity_col_provider_handles = kmalloc(sizeof(void *) * cols, GFP_KERNEL);
-    for(uint64_t c = 0; c < raidn; c++) {
-        dpusm_handle_t *parity_dpusm_col = (dpusm_handle_t *) parity_col_dpusm_handles[c];
-        if (!parity_dpusm_col) {
+    /* extract provider handles out of the dpusm handles */
+    void **col_provider_handles = kmalloc(sizeof(void *) * cols, GFP_KERNEL);
+    for(uint64_t c = 0; c < cols; c++) {
+        dpusm_handle_t *col_dpusm_handle = (dpusm_handle_t *) col_dpusm_handles[c];
+        if (!col_dpusm_handle) {
             good = 0;
             break;
         }
 
-        /* make sure they are on the same provider as src */
-        if (provider != parity_dpusm_col->provider) {
+        /* make sure the columns are on the same provider as src */
+        if (provider != col_dpusm_handle->provider) {
             good = 0;
             break;
         }
 
-        parity_col_provider_handles[c] = parity_dpusm_col->handle;
+        col_provider_handles[c] = col_dpusm_handle->handle;
+    }
+
+    void *rr_handle = NULL;
+    if (good == 1) {
+        /* src_handle is not passed in since it has already been checked */
+        rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
+            col_provider_handles);
+
+        good = !!rr_handle;
     }
 
     dpusm_handle_t *dpusmh = NULL;
-    void *rr_handle = NULL;
     if (good == 1) {
-        /* talk to the provider */
-        rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
-            src_dpusmh->handle, sizes, parity_col_provider_handles);
-
-        if (rr_handle) {
-            dpusmh = dpusm_handle_construct(provider, rr_handle);
-            good = !!dpusmh;
-        }
-        else {
-            good = 0;
-        }
+        dpusmh = dpusm_handle_construct(provider, rr_handle);
     }
-
-    if (good != 1) {
+    else {
         if (rr_handle) {
             dpusm_raid_free(rr_handle);
         }
-
-        if (dpusmh) {
-            dpusm_handle_free(dpusmh);
-            dpusmh = NULL;
-        }
     }
 
-    kfree(parity_col_provider_handles);
+    kfree(col_provider_handles);
     return dpusmh;
 }
 
@@ -603,6 +638,7 @@ static const dpusm_uf_t user_functions = {
     .extract            = dpusm_extract_provider,
     .capabilities       = dpusm_get_capabilities,
     .alloc              = dpusm_alloc,
+    .alloc_ref          = dpusm_alloc_ref,
     .free               = dpusm_free,
     .copy_from_mem      = dpusm_copy_from_mem,
     .copy_to_mem        = dpusm_copy_to_mem,
@@ -610,6 +646,7 @@ static const dpusm_uf_t user_functions = {
     .zero_fill          = dpusm_zero_fill,
     .all_zeros          = dpusm_all_zeros,
     .create_gang        = dpusm_create_gang,
+    .realign            = dpusm_realign,
     .bulk_from_mem      = dpusm_bulk_from_mem,
     .bulk_to_mem        = dpusm_bulk_to_mem,
     .compress           = dpusm_compress,
