@@ -126,10 +126,6 @@ dpusm_alloc(void *provider, size_t size) {
 
 static void *
 dpusm_alloc_ref(void *src, size_t offset, size_t size) {
-    if (!src) {
-        return NULL;
-    }
-
     CHECK_HANDLE(src, dpusmh, NULL);
     return dpusm_handle_construct(dpusmh->provider,
         FUNCS(dpusmh->provider)->alloc_ref(dpusmh->handle,
@@ -203,59 +199,6 @@ dpusm_all_zeros(void *handle, size_t offset, size_t size) {
         return DPUSM_NOT_IMPLEMENTED;
     }
     return FUNCS(dpusmh->provider)->all_zeros(dpusmh->handle, offset, size);
-}
-
-static void *
-dpusm_create_gang(void **handles, size_t count) {
-    /*
-     * there must be at least one handle to have
-     * a target provider to create the gang on
-     */
-    if (!count) {
-        return NULL;
-    }
-
-    void **provider_handles = kzalloc(sizeof(void *) * count, GFP_KERNEL);
-    if (!provider_handles) {
-        return NULL;
-    }
-
-    void *provider = NULL;
-    size_t i;
-    for(i = 0; i < count; i++) {
-        dpusm_handle_t *dpusmh = (dpusm_handle_t *) handles[i];
-
-        /* all handles must exist */
-        if (!dpusmh) {
-            break;
-        }
-
-        void *dpusmh_provider = dpusmh->provider;
-        if (!provider) {
-            provider = dpusmh->provider;
-            if (dpusm_provider_sane(provider) != DPUSM_OK) {
-                break;
-            }
-        }
-        /* all handles must be on the same provider */
-        else if (provider != dpusmh_provider) {
-            break;
-        }
-
-        /* extract provider handle */
-        provider_handles[i] = dpusmh->handle;
-    }
-
-
-    void *gang = NULL;
-    if (i == count) {
-        if (FUNCS(provider)->create_gang) {
-            gang = FUNCS(provider)->create_gang(provider_handles, count);
-        }
-    }
-
-    kfree(provider_handles);
-    return dpusm_handle_construct(provider, gang);
 }
 
 static int
@@ -412,7 +355,7 @@ dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
     if (good == 1) {
         /* src_handle is not passed in since it has already been checked */
         rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
-            col_provider_handles);
+            src_dpusmh->handle, col_provider_handles);
 
         good = !!rr_handle;
     }
@@ -561,24 +504,31 @@ dpusm_disk_open(void *provider, const char *path, fmode_t mode, void *holder) {
         return NULL;
     }
 
+    dpusm_dd_t data = {
+        .path = path,
+        .path_len = strlen(path),
+        .mode = mode,
+        .holder = holder,
+    };
+
     return dpusm_handle_construct(provider,
-        FUNCS(provider)->disk.open(path, mode, holder));
+        FUNCS(provider)->disk.open(&data));
 }
 
 static int
-dpusm_disk_invalidate(void *bdev_handle) {
-    CHECK_HANDLE(bdev_handle, bdev_dpusmh, DPUSM_ERROR);
+dpusm_disk_invalidate(void *disk) {
+    CHECK_HANDLE(disk, disk_dpusmh, DPUSM_ERROR);
 
     /* disk operations are optional */
-    if (!FUNCS(bdev_dpusmh->provider)->disk.invalidate) {
+    if (!FUNCS(disk_dpusmh->provider)->disk.invalidate) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(bdev_dpusmh->provider)->disk.invalidate(bdev_dpusmh->handle);
+    return FUNCS(disk_dpusmh->provider)->disk.invalidate(disk_dpusmh->handle);
 }
 
 static int
-dpusm_disk_write(void *bdev_handle, void *data,
+dpusm_disk_write(void *disk, void *data,
     size_t io_size, uint64_t io_offset, int rw,
     int failfast, int flags, void *ptr,
     dpusm_disk_write_completion_t write_completion) {
@@ -586,47 +536,47 @@ dpusm_disk_write(void *bdev_handle, void *data,
         return DPUSM_ERROR;
     }
 
-    SAME_PROVIDERS(bdev_handle, bdev_dpusmh, data, dpusmh, DPUSM_ERROR);
+    SAME_PROVIDERS(disk, disk_dpusmh, data, dpusmh, DPUSM_ERROR);
 
     /* disk operations are optional */
-    if (!FUNCS(bdev_dpusmh->provider)->disk.write) {
+    if (!FUNCS(disk_dpusmh->provider)->disk.write) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(bdev_dpusmh->provider)->disk.write(bdev_dpusmh->handle,
+    return FUNCS(disk_dpusmh->provider)->disk.write(disk_dpusmh->handle,
         dpusmh->handle, io_size, io_offset, rw, failfast, flags,
         ptr, write_completion);
 }
 
 static int
-dpusm_disk_flush(void *bdev_handle, void *ptr,
+dpusm_disk_flush(void *disk, void *ptr,
     dpusm_disk_flush_completion_t flush_completion) {
     if (!flush_completion) {
         return DPUSM_ERROR;
     }
 
-    CHECK_HANDLE(bdev_handle, bdev_dpusmh, DPUSM_ERROR);
+    CHECK_HANDLE(disk, disk_dpusmh, DPUSM_ERROR);
 
     /* disk operations are optional */
-    if (!FUNCS(bdev_dpusmh->provider)->disk.flush) {
+    if (!FUNCS(disk_dpusmh->provider)->disk.flush) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(bdev_dpusmh->provider)->disk.flush(bdev_dpusmh->handle,
+    return FUNCS(disk_dpusmh->provider)->disk.flush(disk_dpusmh->handle,
         ptr, flush_completion);
 }
 
 static int
-dpusm_disk_close(void *bdev_handle, fmode_t mode) {
-    CHECK_HANDLE(bdev_handle, bdev_dpusmh, DPUSM_ERROR);
+dpusm_disk_close(void *disk) {
+    CHECK_HANDLE(disk, disk_dpusmh, DPUSM_ERROR);
 
     /* disk operations are optional */
-    if (!FUNCS(bdev_dpusmh->provider)->disk.close) {
+    if (!FUNCS(disk_dpusmh->provider)->disk.close) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    FUNCS(bdev_dpusmh->provider)->disk.close(bdev_dpusmh->handle, mode);
-    dpusm_handle_free(bdev_dpusmh);
+    FUNCS(disk_dpusmh->provider)->disk.close(disk_dpusmh->handle);
+    dpusm_handle_free(disk_dpusmh);
     return DPUSM_OK;
 }
 #endif
@@ -645,7 +595,6 @@ static const dpusm_uf_t user_functions = {
     .active             = dpusm_active,
     .zero_fill          = dpusm_zero_fill,
     .all_zeros          = dpusm_all_zeros,
-    .create_gang        = dpusm_create_gang,
     .realign            = dpusm_realign,
     .bulk_from_mem      = dpusm_bulk_from_mem,
     .bulk_to_mem        = dpusm_bulk_to_mem,

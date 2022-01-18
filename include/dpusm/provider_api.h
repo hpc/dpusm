@@ -3,6 +3,14 @@
 
 #include <dpusm/common.h>
 
+/* provider should copy whatever data it needs out of here */
+typedef struct dpusm_provider_disk_data {
+    const char *path;
+    size_t path_len;
+    fmode_t mode;
+    void *holder;
+} dpusm_dd_t;
+
 /* signatures of functions that the provider should implement */
 typedef struct dpusm_provider_functions {
     /*
@@ -45,9 +53,6 @@ typedef struct dpusm_provider_functions {
     /* whether or not a buffer is all zeros */
     int (*all_zeros)(void *handle, size_t offset, size_t size);
 
-    /* effectively an array of allocations */
-    void *(*create_gang)(void **handles, size_t count);
-
     /* move (if necessary) a buffer to an aligned address */
     int (*realign)(void *src, void **dst, size_t aligned_size, size_t alignment);
 
@@ -82,7 +87,7 @@ typedef struct dpusm_provider_functions {
          *     [raidn, cols) - data
          */
         void *(*alloc)(uint64_t raidn, uint64_t acols,
-            void **col_provider_handles);
+            void *src, void **col_provider_handles);
 
         void (*free)(void *raid);
 
@@ -115,16 +120,15 @@ typedef struct dpusm_provider_functions {
 
     struct {
         /* open should return NULL on error */
-        void *(*open)(const char *path,
-            fmode_t mode, void *holder);
-        int (*invalidate)(void *bdev_handle);
-        int (*write)(void *bdev_handle, void *data,
+        void *(*open)(dpusm_dd_t *disk_data);
+        int (*invalidate)(void *disk_handle);
+        int (*write)(void *disk_handle, void *data,
             size_t io_size, uint64_t io_offset, int rw,
             int failfast, int flags, void *ptr,
             dpusm_disk_write_completion_t write_completion);
-        int (*flush)(void *bdev_handle, void *ptr,
+        int (*flush)(void *disk_handle, void *ptr,
             dpusm_disk_flush_completion_t flush_completion);
-        void (*close)(void *bdev_handle, fmode_t mode);
+        void (*close)(void *private);
     } disk;
 } dpusm_pf_t;
 

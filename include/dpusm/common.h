@@ -16,10 +16,9 @@
 typedef enum {
     DPUSM_OPTIONAL_ZERO_FILL     = 1 << 0,
     DPUSM_OPTIONAL_ALL_ZEROS     = 1 << 1,
-    DPUSM_OPTIONAL_CREATE_GANG   = 1 << 2,
-    DPUSM_OPTIONAL_BULK_FROM_MEM = 1 << 3,
-    DPUSM_OPTIONAL_BULK_TO_MEM   = 1 << 4,
-    DPUSM_OPTIONAL_REALIGN       = 1 << 5,
+    DPUSM_OPTIONAL_BULK_FROM_MEM = 1 << 2,
+    DPUSM_OPTIONAL_BULK_TO_MEM   = 1 << 3,
+    DPUSM_OPTIONAL_REALIGN       = 1 << 4,
 } dpusm_optional_t;
 
 /* used for both compression and decompression */

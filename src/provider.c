@@ -39,9 +39,9 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
     }
 
     /*
-      active, zero_fill, all_zeros, create_gang, realign, compress,
-      decompress, and checksum may be defined as needed. They are not
-      grouped together like the other functions.
+      active, zero_fill, all_zeros, realign, compress, decompress, and
+      checksum may be defined as needed. They are not grouped together
+      like the other functions.
     */
 
     const int required = (

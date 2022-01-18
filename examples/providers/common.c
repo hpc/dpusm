@@ -123,7 +123,6 @@ const dpusm_pf_t example_dpusm_provider_functions = {
     .active             = NULL,
     .zero_fill          = NULL,
     .all_zeros          = NULL,
-    .create_gang        = NULL,
     .realign            = NULL,
     .bulk_from_mem      = NULL,
     .bulk_to_mem        = NULL,
