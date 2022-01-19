@@ -355,7 +355,7 @@ dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
     if (good == 1) {
         /* src_handle is not passed in since it has already been checked */
         rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
-            src_dpusmh->handle, col_provider_handles);
+            col_provider_handles);
 
         good = !!rr_handle;
     }
@@ -529,7 +529,7 @@ dpusm_disk_invalidate(void *disk) {
 
 static int
 dpusm_disk_write(void *disk, void *data,
-    size_t io_size, uint64_t io_offset, int rw,
+    size_t io_size, uint64_t io_offset,
     int failfast, int flags, void *ptr,
     dpusm_disk_write_completion_t write_completion) {
     if (!write_completion) {
@@ -544,7 +544,7 @@ dpusm_disk_write(void *disk, void *data,
     }
 
     return FUNCS(disk_dpusmh->provider)->disk.write(disk_dpusmh->handle,
-        dpusmh->handle, io_size, io_offset, rw, failfast, flags,
+        dpusmh->handle, io_size, io_offset, failfast, flags,
         ptr, write_completion);
 }
 

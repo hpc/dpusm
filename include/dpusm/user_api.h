@@ -138,7 +138,7 @@ typedef struct dpusm_user_functions {
             fmode_t mode, void *holder);
         int (*invalidate)(void *disk_handle);
         int (*write)(void *disk_handle, void *data,
-            size_t io_size, uint64_t io_offset, int rw,
+            size_t io_size, uint64_t io_offset,
             int failfast, int flags, void *ptr,
             dpusm_disk_write_completion_t write_completion);
         int (*flush)(void *disk_handle, void *ptr,
