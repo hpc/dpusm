@@ -56,19 +56,6 @@ typedef struct dpusm_provider_functions {
     /* move (if necessary) a buffer to an aligned address */
     int (*realign)(void *src, void **dst, size_t aligned_size, size_t alignment);
 
-    /*
-     * Data is passed in with the bufs array for transfer between the
-     * offloader and memory.
-     *
-     * The arrays have a short lifetime, but the data inside being
-     * pointed to have the same lifetime as the structure they came
-     * from.
-     */
-    int (*bulk_from_mem)(void *handle, void **bufs,
-        size_t *sizes, size_t count);
-    int (*bulk_to_mem)  (void *handle, void **bufs,
-        size_t *sizes, size_t count);
-
     int (*compress)(dpusm_compress_t alg,
         void *src, void *dst,
         size_t s_len, int level,
@@ -125,9 +112,9 @@ typedef struct dpusm_provider_functions {
         int (*write)(void *disk_handle, void *data,
             size_t io_size, uint64_t io_offset,
             int failfast, int flags, void *ptr,
-            dpusm_disk_write_completion_t write_completion);
+            dpusm_dwc_t write_completion);
         int (*flush)(void *disk_handle, void *ptr,
-            dpusm_disk_flush_completion_t flush_completion);
+            dpusm_dfc_t flush_completion);
         void (*close)(void *private);
     } disk;
 } dpusm_pf_t;

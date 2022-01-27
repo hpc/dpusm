@@ -233,32 +233,6 @@ dpusm_realign(void *src, void **dst, size_t aligned_size, size_t alignment) {
 }
 
 static int
-dpusm_bulk_from_mem(void *handle, void **bufs, size_t *sizes, size_t count) {
-    CHECK_HANDLE(handle, dpusmh, DPUSM_ERROR);
-
-    /* bulk from mem is optional */
-    if (!FUNCS(dpusmh->provider)->bulk_from_mem) {
-        return DPUSM_NOT_IMPLEMENTED;
-    }
-
-    return FUNCS(dpusmh->provider)->bulk_from_mem(dpusmh->handle,
-        bufs, sizes, count);
-}
-
-static int
-dpusm_bulk_to_mem(void *handle, void **bufs, size_t *sizes, size_t count) {
-    CHECK_HANDLE(handle, dpusmh, DPUSM_ERROR);
-
-    /* bulk to mem is optional */
-    if (!FUNCS(dpusmh->provider)->bulk_to_mem) {
-        return DPUSM_NOT_IMPLEMENTED;
-    }
-
-    return FUNCS(dpusmh->provider)->bulk_to_mem(dpusmh->handle,
-        bufs, sizes, count);
-}
-
-static int
 dpusm_compress(dpusm_compress_t alg, void *src, void *dst, size_t s_len,
     int level, size_t *c_len) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
@@ -531,7 +505,7 @@ static int
 dpusm_disk_write(void *disk, void *data,
     size_t io_size, uint64_t io_offset,
     int failfast, int flags, void *ptr,
-    dpusm_disk_write_completion_t write_completion) {
+    dpusm_dwc_t write_completion) {
     if (!write_completion) {
         return DPUSM_ERROR;
     }
@@ -550,7 +524,7 @@ dpusm_disk_write(void *disk, void *data,
 
 static int
 dpusm_disk_flush(void *disk, void *ptr,
-    dpusm_disk_flush_completion_t flush_completion) {
+    dpusm_dfc_t flush_completion) {
     if (!flush_completion) {
         return DPUSM_ERROR;
     }
@@ -596,8 +570,6 @@ static const dpusm_uf_t user_functions = {
     .zero_fill          = dpusm_zero_fill,
     .all_zeros          = dpusm_all_zeros,
     .realign            = dpusm_realign,
-    .bulk_from_mem      = dpusm_bulk_from_mem,
-    .bulk_to_mem        = dpusm_bulk_to_mem,
     .compress           = dpusm_compress,
     .decompress         = dpusm_decompress,
     .checksum           = dpusm_checksum,

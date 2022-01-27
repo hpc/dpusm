@@ -24,11 +24,10 @@ dpusmph_destroy(dpusm_ph_t *dpusmph)
 /* masks for bad function groups */
 static const int DPUSM_PROVIDER_BAD_STRUCT   = (1 << 0);
 static const int DPUSM_PROVIDER_BAD_REQUIRED = (1 << 1);
-static const int DPUSM_PROVIDER_BAD_BULK     = (1 << 2);
-static const int DPUSM_PROVIDER_BAD_RAID_GEN = (1 << 3);
-static const int DPUSM_PROVIDER_BAD_RAID_REC = (1 << 4);
-static const int DPUSM_PROVIDER_BAD_FILE     = (1 << 5);
-static const int DPUSM_PROVIDER_BAD_DISK     = (1 << 6);
+static const int DPUSM_PROVIDER_BAD_RAID_GEN = (1 << 2);
+static const int DPUSM_PROVIDER_BAD_RAID_REC = (1 << 3);
+static const int DPUSM_PROVIDER_BAD_FILE     = (1 << 4);
+static const int DPUSM_PROVIDER_BAD_DISK     = (1 << 5);
 
 /* check provider sanity when loading */
 static int
@@ -51,10 +50,6 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
         !!funcs->free +
         !!funcs->copy_from_mem +
         !!funcs->copy_to_mem);
-
-    const int bulk = (
-        !!funcs->bulk_from_mem +
-        !!funcs->bulk_to_mem);
 
     const int raid_gen = (
         !!funcs->raid.alloc +
@@ -81,7 +76,6 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
     // get bitmap of bad function groups
     const int rc = (
         (!(required == 6)?DPUSM_PROVIDER_BAD_REQUIRED:0) |
-        (!((bulk == 0) || (bulk == 2))?DPUSM_PROVIDER_BAD_BULK:0) |
         (!((raid_gen == 0) || (raid_gen == 3))?DPUSM_PROVIDER_BAD_RAID_GEN:0) |
         (!((raid_rec == 0) || ((raid_gen == 3) && (raid_rec == 3)))?DPUSM_PROVIDER_BAD_RAID_REC:0) |
         (!((file == 0) || (file == 3))?DPUSM_PROVIDER_BAD_FILE:0) |

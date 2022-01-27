@@ -16,9 +16,7 @@
 typedef enum {
     DPUSM_OPTIONAL_ZERO_FILL     = 1 << 0,
     DPUSM_OPTIONAL_ALL_ZEROS     = 1 << 1,
-    DPUSM_OPTIONAL_BULK_FROM_MEM = 1 << 2,
-    DPUSM_OPTIONAL_BULK_TO_MEM   = 1 << 3,
-    DPUSM_OPTIONAL_REALIGN       = 1 << 4,
+    DPUSM_OPTIONAL_REALIGN       = 1 << 2,
 } dpusm_optional_t;
 
 /* used for both compression and decompression */
@@ -92,8 +90,11 @@ typedef struct dpusm_move {
     size_t offset;
 } dpusm_mv_t;
 
+/* callback to run after completing writes */
 typedef void (*dpusm_disk_write_completion_t)(void *ptr, int error);
 typedef dpusm_disk_write_completion_t dpusm_dwc_t;
+
+/* callback to run after completing flushes */
 typedef void (*dpusm_disk_flush_completion_t)(void *ptr, int error);
 typedef dpusm_disk_flush_completion_t dpusm_dfc_t;
 
