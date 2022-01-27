@@ -22,19 +22,28 @@ dpusmph_destroy(dpusm_ph_t *dpusmph)
 }
 
 /* masks for bad function groups */
-static const int DPUSM_PROVIDER_BAD_STRUCT   = (1 << 0);
-static const int DPUSM_PROVIDER_BAD_REQUIRED = (1 << 1);
-static const int DPUSM_PROVIDER_BAD_RAID_GEN = (1 << 2);
-static const int DPUSM_PROVIDER_BAD_RAID_REC = (1 << 3);
-static const int DPUSM_PROVIDER_BAD_FILE     = (1 << 4);
-static const int DPUSM_PROVIDER_BAD_DISK     = (1 << 5);
+static const int DPUSM_PROVIDER_BAD_GROUP_STRUCT   = (1 << 0);
+static const int DPUSM_PROVIDER_BAD_GROUP_REQUIRED = (1 << 1);
+static const int DPUSM_PROVIDER_BAD_GROUP_RAID_GEN = (1 << 2);
+static const int DPUSM_PROVIDER_BAD_GROUP_RAID_REC = (1 << 3);
+static const int DPUSM_PROVIDER_BAD_GROUP_FILE     = (1 << 4);
+static const int DPUSM_PROVIDER_BAD_GROUP_DISK     = (1 << 5);
+
+static const char *DPUSM_PROVIDER_BAD_GROUP_STRINGS[] = {
+    "STRUCT",
+    "REQUIRED",
+    "RAID_GEN",
+    "RAID_REC",
+    "FILE",
+    "DISK",
+};
 
 /* check provider sanity when loading */
 static int
 dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
 {
     if (!funcs) {
-        return DPUSM_PROVIDER_BAD_STRUCT;
+        return DPUSM_PROVIDER_BAD_GROUP_STRUCT;
     }
 
     /*
@@ -75,11 +84,11 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
 
     // get bitmap of bad function groups
     const int rc = (
-        (!(required == 6)?DPUSM_PROVIDER_BAD_REQUIRED:0) |
-        (!((raid_gen == 0) || (raid_gen == 3))?DPUSM_PROVIDER_BAD_RAID_GEN:0) |
-        (!((raid_rec == 0) || ((raid_gen == 3) && (raid_rec == 3)))?DPUSM_PROVIDER_BAD_RAID_REC:0) |
-        (!((file == 0) || (file == 3))?DPUSM_PROVIDER_BAD_FILE:0) |
-        (!((disk == 0) || (disk == 5))?DPUSM_PROVIDER_BAD_DISK:0)
+        (!(required == 6)?DPUSM_PROVIDER_BAD_GROUP_REQUIRED:0) |
+        (!((raid_gen == 0) || (raid_gen == 3))?DPUSM_PROVIDER_BAD_GROUP_RAID_GEN:0) |
+        (!((raid_rec == 0) || ((raid_gen == 3) && (raid_rec == 3)))?DPUSM_PROVIDER_BAD_GROUP_RAID_REC:0) |
+        (!((file == 0) || (file == 3))?DPUSM_PROVIDER_BAD_GROUP_FILE:0) |
+        (!((disk == 0) || (disk == 5))?DPUSM_PROVIDER_BAD_GROUP_DISK:0)
     );
 
     return rc;
@@ -111,8 +120,30 @@ int
 dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *funcs) {
     const int rc = dpusm_provider_sane_at_load(funcs);
     if (rc != DPUSM_OK) {
+        static const size_t max =
+            sizeof(DPUSM_PROVIDER_BAD_GROUP_STRINGS) / sizeof(DPUSM_PROVIDER_BAD_GROUP_STRINGS[0]);
+
+        size_t size = 0;
+        for(size_t i = 0; i < max; i++) {
+            if (rc & (1 << i)) {
+                size += strlen(DPUSM_PROVIDER_BAD_GROUP_STRINGS[i]) + 2; /* str + ", " */
+            }
+        }
+
+        char *buf = kmalloc(size + 1, GFP_KERNEL);
+        ssize_t offset = 0;
+        for(size_t i = 0; i < max; i++) {
+            if (rc & (1 << i)) {
+                offset += snprintf(buf + offset, size - offset, "%s, ", DPUSM_PROVIDER_BAD_GROUP_STRINGS[i]);
+            }
+        }
+        buf[offset - 2] = '\0'; /* get rid of trailing ", " */
+
         printk("DPUSM Provider \"%s\" does not provide "
-            "a valid set of functions. Bad function bitmap: %d\n", name, rc);
+            "a valid set of functions. Bad function groups: %s\n", name, buf);
+
+        kfree(buf);
+
         return -EINVAL;
     }
 
