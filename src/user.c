@@ -1,5 +1,4 @@
-#include <linux/slab.h>
-
+#include <dpusm/alloc.h>
 #include <dpusm/provider.h>
 #include <dpusm/user_api.h>
 
@@ -11,24 +10,26 @@ extern int dpusm_put(void *handle);
 
 /* struct returned by alloc functions */
 typedef struct dpusm_handle {
-    void *provider; /* where this allocation came from */
-    void *handle;   /* opaque handle to the allocation */
+    dpusm_ph_t *provider; /* where this allocation came from */
+    void *handle;         /* opaque handle to the allocation */
 } dpusm_handle_t;
 
 static dpusm_handle_t *
 dpusm_handle_construct(void *provider, void *handle) {
     dpusm_handle_t *dpusmh = NULL;
     if (provider && handle) {
-        dpusmh = kmalloc(sizeof(dpusm_handle_t), GFP_KERNEL);
-        dpusmh->provider = provider;
-        dpusmh->handle = handle;
+        dpusmh = dpusm_mem_alloc(sizeof(dpusm_handle_t));
+        if (dpusmh) {
+            dpusmh->provider = provider;
+            dpusmh->handle = handle;
+        }
     }
     return dpusmh;
 }
 
 static void
 dpusm_handle_free(dpusm_handle_t *dpusmh) {
-    kfree(dpusmh);
+    dpusm_mem_free(dpusmh, sizeof(*dpusmh));
 }
 
 /*
@@ -153,8 +154,10 @@ dpusm_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
 
     CHECK_HANDLE(mv->handle, dpusmh, DPUSM_ERROR);
 
-    dpusm_mv_t actual_mv = { .handle = dpusmh->handle,
-        .offset = mv->offset };
+    dpusm_mv_t actual_mv = {
+        .handle = dpusmh->handle,
+        .offset = mv->offset,
+    };
 
     return FUNCS(dpusmh->provider)->copy_from_mem(&actual_mv,
         buf, size);
@@ -168,8 +171,10 @@ dpusm_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
 
     CHECK_HANDLE(mv->handle, dpusmh, DPUSM_ERROR);
 
-    dpusm_mv_t actual_mv = { .handle = dpusmh->handle,
-        .offset = mv->offset };
+    dpusm_mv_t actual_mv = {
+        .handle = dpusmh->handle,
+        .offset = mv->offset,
+    };
 
     return FUNCS(dpusmh->provider)->copy_to_mem(&actual_mv,
         buf, size);
@@ -290,6 +295,7 @@ dpusm_raid_free(void *raid) {
         return;
     }
 
+    /* raid_dpusmh->handle should not be NULL if this has been reached */
     FUNCS(raid_dpusmh->provider)->raid.free(raid_dpusmh->handle);
     dpusm_handle_free(raid_dpusmh);
 }
@@ -305,46 +311,39 @@ dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
         return NULL;
     }
 
-    int good = 1;
+    dpusm_handle_t *dpusmh = NULL;
 
     /* extract provider handles out of the dpusm handles */
-    void **col_provider_handles = kmalloc(sizeof(void *) * cols, GFP_KERNEL);
+    const size_t col_provider_handles_size = sizeof(void *) * cols;
+    void **col_provider_handles = dpusm_mem_alloc(col_provider_handles_size);
     for(uint64_t c = 0; c < cols; c++) {
         dpusm_handle_t *col_dpusm_handle = (dpusm_handle_t *) col_dpusm_handles[c];
         if (!col_dpusm_handle) {
-            good = 0;
-            break;
+            goto cleanup;
         }
 
         /* make sure the columns are on the same provider as src */
         if (provider != col_dpusm_handle->provider) {
-            good = 0;
-            break;
+            goto cleanup;
         }
 
         col_provider_handles[c] = col_dpusm_handle->handle;
     }
 
-    void *rr_handle = NULL;
-    if (good == 1) {
-        /* src_handle is not passed in since it has already been checked */
-        rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
-            col_provider_handles);
+    /* src_handle is not passed in since it has already been checked */
+    void *rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
+        col_provider_handles);
 
-        good = !!rr_handle;
-    }
+    dpusmh = dpusm_handle_construct(provider, rr_handle);
 
-    dpusm_handle_t *dpusmh = NULL;
-    if (good == 1) {
-        dpusmh = dpusm_handle_construct(provider, rr_handle);
-    }
-    else {
+    if (!dpusmh) {
         if (rr_handle) {
-            dpusm_raid_free(rr_handle);
+            FUNCS(provider)->raid.free(rr_handle);
         }
     }
 
-    kfree(col_provider_handles);
+  cleanup:
+    dpusm_mem_free(col_provider_handles, col_provider_handles_size);
     return dpusmh;
 }
 
@@ -372,7 +371,8 @@ dpusm_raid_new_parity(void *raid, uint64_t raidn,
     }
 
     /* array of pointers for provider to fill in */
-    void **new_provider_parity_cols = kzalloc(sizeof(void *) * raidn, GFP_KERNEL);
+    const size_t new_provider_parity_col_size = sizeof(void *) * raidn;
+    void **new_provider_parity_cols = dpusm_mem_alloc(new_provider_parity_col_size);
     const int rc = FUNCS(provider)->raid.new_parity(dpusmh->handle, raidn,
         new_provider_parity_cols, new_parity_sizes);
 
@@ -394,9 +394,8 @@ dpusm_raid_new_parity(void *raid, uint64_t raidn,
         }
     }
 
-    kfree(new_provider_parity_cols);
+    dpusm_mem_free(new_provider_parity_cols, new_provider_parity_col_size);
     return rc;
-
 }
 
 static int

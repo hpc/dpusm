@@ -4,8 +4,8 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 
+#include <dpusm/alloc.h>
 #include <dpusm/provider.h>
-#include <dpusm/user_api.h>
 
 /* global list of providers */
 static dpusm_t dpusm;
@@ -56,6 +56,7 @@ dpusm_init(void) {
     rwlock_init(&dpusm.lock);
 
     atomic_set(&dpusm.active, 0);
+    dpusm_mem_init();
 
     printk("DPUSM init\n");
     return 0;
@@ -89,7 +90,16 @@ dpusm_exit(void)
 
     dpusm_provider_write_unlock(&dpusm);
 
+#ifdef DPUSM_TRACK_ALLOCS
+    size_t alloc_count = 0;
+    size_t active_count = 0;
+    size_t active_size = 0;
+    dpusm_mem_stats(&alloc_count, &active_count, &active_size);
+    printk("DPUSM exit with %zu bytes in %zu/%zu allocations\n",
+           active_size, active_count, alloc_count);
+#else
     printk("DPUSM exit\n");
+#endif
 }
 
 module_init(dpusm_init);

@@ -1,11 +1,10 @@
-#include <linux/slab.h>
-
+#include <dpusm/alloc.h>
 #include <dpusm/provider.h>
 
 dpusm_ph_t *
 dpusmph_init(const char *name, const dpusm_pf_t *funcs)
 {
-    dpusm_ph_t *dpusmph = kmalloc(sizeof(dpusm_ph_t), GFP_KERNEL);
+    dpusm_ph_t *dpusmph = dpusm_mem_alloc(sizeof(dpusm_ph_t));
     if (dpusmph) {
         dpusmph->name = name;
         dpusmph->funcs = funcs;
@@ -18,7 +17,7 @@ dpusmph_init(const char *name, const dpusm_pf_t *funcs)
 void
 dpusmph_destroy(dpusm_ph_t *dpusmph)
 {
-    kfree(dpusmph);
+    dpusm_mem_free(dpusmph, sizeof(*dpusmph));
 }
 
 /* masks for bad function groups */
@@ -123,14 +122,14 @@ dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *func
         static const size_t max =
             sizeof(DPUSM_PROVIDER_BAD_GROUP_STRINGS) / sizeof(DPUSM_PROVIDER_BAD_GROUP_STRINGS[0]);
 
-        size_t size = 0;
+        size_t size = 1; /* NULL terminator */
         for(size_t i = 0; i < max; i++) {
             if (rc & (1 << i)) {
                 size += strlen(DPUSM_PROVIDER_BAD_GROUP_STRINGS[i]) + 2; /* str + ", " */
             }
         }
 
-        char *buf = kmalloc(size + 1, GFP_KERNEL);
+        char *buf = dpusm_mem_alloc(size);
         ssize_t offset = 0;
         for(size_t i = 0; i < max; i++) {
             if (rc & (1 << i)) {
@@ -142,7 +141,7 @@ dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *func
         printk("DPUSM Provider \"%s\" does not provide "
             "a valid set of functions. Bad function groups: %s\n", name, buf);
 
-        kfree(buf);
+        dpusm_mem_free(buf, size);
 
         return -EINVAL;
     }
