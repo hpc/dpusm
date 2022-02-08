@@ -181,11 +181,13 @@ dpusm_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
 }
 
 static int
-dpusm_active(void *provider, size_t *count, size_t *size,
-             size_t *actual_count, size_t *actual_size) {
+dpusm_provider_mem_stats(void *provider, size_t *total, size_t *count,
+    size_t *size, size_t *actual) {
     CHECK_PROVIDER(provider, DPUSM_ERROR);
-    return FUNCS(provider)->active(count, size,
-        actual_count, actual_size);
+    if (!FUNCS(provider)->mem_stats) {
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+    return FUNCS(provider)->mem_stats(total, count, size, actual);
 }
 
 static int
@@ -565,7 +567,7 @@ static const dpusm_uf_t user_functions = {
     .free               = dpusm_free,
     .copy_from_mem      = dpusm_copy_from_mem,
     .copy_to_mem        = dpusm_copy_to_mem,
-    .active             = dpusm_active,
+    .mem_stats          = dpusm_provider_mem_stats,
     .zero_fill          = dpusm_zero_fill,
     .all_zeros          = dpusm_all_zeros,
     .realign            = dpusm_realign,

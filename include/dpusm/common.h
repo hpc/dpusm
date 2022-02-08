@@ -14,9 +14,10 @@
 /* 0 should be considered invalid/not available when using these values */
 
 typedef enum {
-    DPUSM_OPTIONAL_ZERO_FILL     = 1 << 0,
-    DPUSM_OPTIONAL_ALL_ZEROS     = 1 << 1,
-    DPUSM_OPTIONAL_REALIGN       = 1 << 2,
+    DPUSM_OPTIONAL_MEM_STATS     = 1 << 0,
+    DPUSM_OPTIONAL_ZERO_FILL     = 1 << 1,
+    DPUSM_OPTIONAL_ALL_ZEROS     = 1 << 2,
+    DPUSM_OPTIONAL_REALIGN       = 1 << 3,
 } dpusm_optional_t;
 
 /* used for both compression and decompression */

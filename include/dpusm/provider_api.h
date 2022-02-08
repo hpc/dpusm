@@ -40,12 +40,16 @@ typedef struct dpusm_provider_functions {
      */
 
     /*
-     * amount memory allocated
-     * definitions of count/size vs actual_count/actual_size
-     * will depend on the provider
+     * memory statistics
+     * definition will depend on the provider, but in general:
+     *
+     *     total:  count of all allocations made (never decreases)
+     *     count:  count of active allocations
+     *     size:   total requested size of active allocations
+     *     actual: total actual size of active allocations
      */
-    int (*active)(size_t *count, size_t *size,
-        size_t *actual_count, size_t *actual_size);
+    int (*mem_stats)(size_t *total, size_t *count,
+        size_t *size, size_t *actual);
 
     /* fill in a buffer with zeros */
     int (*zero_fill)(void *handle, size_t offset, size_t size);
