@@ -36,11 +36,11 @@ dpusm_provider_capabilities(dpusm_pc_t *caps) {
 }
 
 void *
-dpusm_provider_alloc(size_t size) {
+dpusm_provider_alloc(size_t size, size_t actual) {
     alloc_t *alloc = kmalloc(sizeof(alloc_t), GFP_KERNEL);
     if (alloc) {
         alloc->type = ALLOC_REAL;
-        alloc->ptr = kmalloc(size, GFP_KERNEL);
+        alloc->ptr = kmalloc(actual, GFP_KERNEL);
         alloc->size = size;
 
         if (!alloc->ptr) {

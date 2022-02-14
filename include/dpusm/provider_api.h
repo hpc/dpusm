@@ -20,8 +20,15 @@ typedef struct dpusm_provider_functions {
     /* bitmasks of capabilities the provider brings */
     int (*capabilities)(dpusm_pc_t *caps);
 
-    /* get a new offloader handle */
-    void *(*alloc)(size_t size);
+    /*
+     * get a new offloader handle
+     *
+     * size   - The amount of space that is expected to be used.
+     *          Allocations will be marked with this value.
+     * actual - The actual amount of space to request from the
+     *          provider.
+     */
+    void *(*alloc)(size_t size, size_t actual);
 
     /* reference an existing handle */
     void *(*alloc_ref)(void *src, size_t offset, size_t size);
