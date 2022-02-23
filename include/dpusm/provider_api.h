@@ -112,7 +112,8 @@ typedef struct dpusm_provider_functions {
         /* open should return NULL on error */
         void *(*open)(const char *path, int flags, int mode);
         int (*write)(void *fp_handle, void *data, size_t size,
-            loff_t offset, ssize_t *resid, int *err);
+            size_t trailing_zeros, loff_t offset, ssize_t *resid,
+            int *err);
         void (*close)(void *fp_handle);
     } file;
 
@@ -121,9 +122,9 @@ typedef struct dpusm_provider_functions {
         void *(*open)(dpusm_dd_t *disk_data);
         int (*invalidate)(void *disk_handle);
         int (*write)(void *disk_handle, void *data,
-            size_t io_size, uint64_t io_offset,
-            int failfast, int flags, void *ptr,
-            dpusm_dwc_t write_completion);
+            size_t io_size, size_t trailing_zeros,
+            uint64_t io_offset, int failfast, int flags,
+            void *ptr, dpusm_dwc_t write_completion);
         int (*flush)(void *disk_handle, void *ptr,
             dpusm_dfc_t flush_completion);
         void (*close)(void *private);

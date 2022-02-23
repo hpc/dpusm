@@ -448,7 +448,7 @@ dpusm_file_open(void *provider, const char *path, int flags, int mode) {
 
 static int
 dpusm_file_write(void *fp_handle, void *data, size_t count,
-    loff_t offset, ssize_t *resid, int *err) {
+    size_t trailing_zeros, loff_t offset, ssize_t *resid, int *err) {
     SAME_PROVIDERS(fp_handle, fp_dpusmh, data, dpusmh, DPUSM_ERROR);
 
     /* file operations are optional */
@@ -457,7 +457,7 @@ dpusm_file_write(void *fp_handle, void *data, size_t count,
     }
 
     return FUNCS(fp_dpusmh->provider)->file.write(fp_dpusmh->handle,
-        dpusmh->handle, count, offset, resid, err);
+        dpusmh->handle, count, trailing_zeros, offset, resid, err);
 }
 
 static int
@@ -509,9 +509,9 @@ dpusm_disk_invalidate(void *disk) {
 
 static int
 dpusm_disk_write(void *disk, void *data,
-    size_t io_size, uint64_t io_offset,
-    int failfast, int flags, void *ptr,
-    dpusm_dwc_t write_completion) {
+    size_t io_size, size_t trailing_zeros,
+    uint64_t io_offset, int failfast, int flags,
+    void *ptr, dpusm_dwc_t write_completion) {
     if (!write_completion) {
         return DPUSM_ERROR;
     }
@@ -524,7 +524,7 @@ dpusm_disk_write(void *disk, void *data,
     }
 
     return FUNCS(disk_dpusmh->provider)->disk.write(disk_dpusmh->handle,
-        dpusmh->handle, io_size, io_offset, failfast, flags,
+        dpusmh->handle, io_size, trailing_zeros, io_offset, failfast, flags,
         ptr, write_completion);
 }
 
