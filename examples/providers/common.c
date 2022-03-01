@@ -23,7 +23,7 @@ ptr_offset(void *ptr, size_t offset) {
     return ((char *) ptr) + offset;
 }
 
-int
+static int
 dpusm_provider_capabilities(dpusm_pc_t *caps) {
     caps->optional           = 0;
     caps->compress           = 0;
@@ -35,7 +35,7 @@ dpusm_provider_capabilities(dpusm_pc_t *caps) {
     return DPUSM_OK;
 }
 
-void *
+static void *
 dpusm_provider_alloc(size_t size, size_t actual) {
     alloc_t *alloc = kmalloc(sizeof(alloc_t), GFP_KERNEL);
     if (alloc) {
@@ -52,7 +52,7 @@ dpusm_provider_alloc(size_t size, size_t actual) {
     return alloc;
 }
 
-void *
+static void *
 dpusm_provider_alloc_ref(void *src, size_t offset, size_t size) {
     if (!src) {
         return NULL;
@@ -69,7 +69,12 @@ dpusm_provider_alloc_ref(void *src, size_t offset, size_t size) {
     return ref;
 }
 
-void
+static int
+dpusm_provider_get_size(void *handle, size_t *size, size_t *actual) {
+    return DPUSM_ERROR;
+}
+
+static void
 dpusm_provider_free(void *handle) {
     alloc_t *alloc = (alloc_t *) handle;
     if (alloc) {
@@ -87,7 +92,7 @@ dpusm_provider_free(void *handle) {
     }
 }
 
-int
+static int
 dpusm_provider_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
     alloc_t *dst_handle = (alloc_t *) mv->handle;
     if (!dst_handle) {
@@ -100,7 +105,7 @@ dpusm_provider_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
     return DPUSM_OK;
 }
 
-int
+static int
 dpusm_provider_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
     alloc_t *src_handle = (alloc_t *) mv->handle;
     if (!src_handle) {
@@ -117,13 +122,13 @@ const dpusm_pf_t example_dpusm_provider_functions = {
     .capabilities       = dpusm_provider_capabilities,
     .alloc              = dpusm_provider_alloc,
     .alloc_ref          = dpusm_provider_alloc_ref,
+    .get_size           = dpusm_provider_get_size,
     .free               = dpusm_provider_free,
     .copy_from_mem      = dpusm_provider_copy_from_mem,
     .copy_to_mem        = dpusm_provider_copy_to_mem,
     .mem_stats          = NULL,
     .zero_fill          = NULL,
     .all_zeros          = NULL,
-    .realign            = NULL,
     .compress           = NULL,
     .decompress         = NULL,
     .checksum           = NULL,

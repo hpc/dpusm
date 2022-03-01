@@ -33,6 +33,9 @@ typedef struct dpusm_provider_functions {
     /* reference an existing handle */
     void *(*alloc_ref)(void *src, size_t offset, size_t size);
 
+    /* Get size data of a handle */
+    int (*get_size)(void *handle, size_t *size, size_t *actual);
+
     /* free an offloader handle */
     void (*free)(void *handle);
 
@@ -63,9 +66,6 @@ typedef struct dpusm_provider_functions {
 
     /* whether or not a buffer is all zeros */
     int (*all_zeros)(void *handle, size_t offset, size_t size);
-
-    /* move (if necessary) a buffer to an aligned address */
-    int (*realign)(void *src, void **dst, size_t aligned_size, size_t alignment);
 
     int (*compress)(dpusm_compress_t alg,
         void *src, void *dst,

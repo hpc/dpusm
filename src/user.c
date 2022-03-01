@@ -138,6 +138,12 @@ dpusm_alloc_ref(void *src, size_t offset, size_t size) {
         offset, size));
 }
 
+static int
+dpusm_get_size(void *handle, size_t *size, size_t *actual) {
+    CHECK_HANDLE(handle, dpusmh, DPUSM_ERROR);
+    return FUNCS(dpusmh->provider)->get_size(dpusmh->handle, size, actual);
+}
+
 static void
 dpusm_free(void *handle) {
     if (!handle) {
@@ -211,37 +217,6 @@ dpusm_all_zeros(void *handle, size_t offset, size_t size) {
         return DPUSM_NOT_IMPLEMENTED;
     }
     return FUNCS(dpusmh->provider)->all_zeros(dpusmh->handle, offset, size);
-}
-
-static int
-dpusm_realign(void *src, void **dst, size_t aligned_size, size_t alignment) {
-    CHECK_HANDLE(src, src_dpusmh, DPUSM_ERROR);
-
-    /* realign is optional */
-    if (!FUNCS(src_dpusmh->provider)->realign) {
-        return DPUSM_NOT_IMPLEMENTED;
-    }
-
-    if (!dst) {
-        return DPUSM_ERROR;
-    }
-
-    void *dst_provider_handle = NULL;
-    const int rc = FUNCS(src_dpusmh->provider)->realign(src_dpusmh->handle,
-        &dst_provider_handle, aligned_size, alignment);
-    if (rc != DPUSM_OK) {
-        return rc;
-    }
-
-    /* nothing done */
-    if (src_dpusmh->handle == dst_provider_handle) {
-        *dst = src;
-    }
-    /* data was copied into a new handle */
-    else {
-        *dst = dpusm_handle_construct(src_dpusmh->provider, dst_provider_handle);
-    }
-    return rc;
 }
 
 static int
@@ -569,13 +544,13 @@ static const dpusm_uf_t user_functions = {
     .capabilities       = dpusm_get_capabilities,
     .alloc              = dpusm_alloc,
     .alloc_ref          = dpusm_alloc_ref,
+    .get_size           = dpusm_get_size,
     .free               = dpusm_free,
     .copy_from_mem      = dpusm_copy_from_mem,
     .copy_to_mem        = dpusm_copy_to_mem,
     .mem_stats          = dpusm_provider_mem_stats,
     .zero_fill          = dpusm_zero_fill,
     .all_zeros          = dpusm_all_zeros,
-    .realign            = dpusm_realign,
     .compress           = dpusm_compress,
     .decompress         = dpusm_decompress,
     .checksum           = dpusm_checksum,
