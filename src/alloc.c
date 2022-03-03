@@ -2,7 +2,7 @@
 
 #include <dpusm/alloc.h>
 
-#ifdef DPUSM_TRACK_ALLOCS
+#if DPUSM_TRACK_ALLOCS
 /*
  * keep track of allocations owned by the dpusm
  * these variables are defined in dpusm.c
@@ -13,7 +13,7 @@ static atomic_t active_size;    /* currently active allocations */
 #endif
 
 void dpusm_mem_init(void) {
-#ifdef DPUSM_TRACK_ALLOCS
+#if DPUSM_TRACK_ALLOCS
     atomic_set(&alloc_count,  0);
     atomic_set(&active_count, 0);
     atomic_set(&active_size,  0);
@@ -23,7 +23,7 @@ void dpusm_mem_init(void) {
 void *dpusm_mem_alloc(size_t size) {
     void *ptr = kmalloc(size, GFP_KERNEL);
     if (ptr) {
-#ifdef DPUSM_TRACK_ALLOCS
+#if DPUSM_TRACK_ALLOCS
         atomic_add(1,    &alloc_count);
         atomic_add(1,    &active_count);
         atomic_add(size, &active_size);
@@ -34,14 +34,14 @@ void *dpusm_mem_alloc(size_t size) {
 
 void dpusm_mem_free(void *ptr, size_t size) {
     kfree(ptr);
-#ifdef DPUSM_TRACK_ALLOCS
+#if DPUSM_TRACK_ALLOCS
     atomic_sub(1,    &active_count);
     atomic_sub(size, &active_size);
 #endif
 }
 
 void dpusm_mem_stats(size_t *total, size_t *count, size_t *size) {
-#ifdef DPUSM_TRACK_ALLOCS
+#if DPUSM_TRACK_ALLOCS
     if (total) {
         *total = atomic_read(&alloc_count);
     }

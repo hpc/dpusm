@@ -90,7 +90,7 @@ dpusm_exit(void)
 
     dpusm_provider_write_unlock(&dpusm);
 
-#ifdef DPUSM_TRACK_ALLOCS
+#if DPUSM_TRACK_ALLOCS
     size_t alloc_count = 0;
     size_t active_count = 0;
     size_t active_size = 0;
