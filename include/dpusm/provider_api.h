@@ -79,13 +79,8 @@ typedef struct dpusm_provider_functions {
         void *data, size_t size, void *cksum);
 
     struct {
-        /*
-         * col_provider_handles order:
-         *     [0, raidn)    - parity
-         *     [raidn, cols) - data
-         */
-        void *(*alloc)(uint64_t raidn, uint64_t acols,
-            void **col_provider_handles);
+        void *(*alloc)(size_t nparity, size_t ndata,
+            void **col_handles);
 
         void (*free)(void *raid);
 

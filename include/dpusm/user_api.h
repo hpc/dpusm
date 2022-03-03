@@ -89,12 +89,13 @@ typedef struct dpusm_user_functions {
 
     struct {
         /*
-         * col_dpusm_handles order:
-         *     [0, raidn)    - parity
-         *     [raidn, cols) - data
+         * col_handles should contain both parity columns as well as
+         * data columns. The order will depend on the caller. The data
+         * columns should normally be references into src. src is
+         * used as an "expected" location to compare against.
          */
-        void *(*alloc)(uint64_t raidn, uint64_t cols,
-            void *src_handle, void **col_dpusm_handles);
+        void *(*alloc)(size_t nparity, size_t ndata,
+            void *src, void **col_handles);
 
         void (*free)(void *raid);
 

@@ -283,9 +283,9 @@ dpusm_raid_free(void *raid) {
 }
 
 static void *
-dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
-    void **col_dpusm_handles) {
-    CHECK_HANDLE(src_handle, src_dpusmh, NULL);
+dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
+    void **col_handles) {
+    CHECK_HANDLE(src, src_dpusmh, NULL);
     void *provider = src_dpusmh->provider;
 
     /* raid is optional */
@@ -293,40 +293,42 @@ dpusm_raid_alloc(uint64_t raidn, uint64_t cols, void *src_handle,
         return NULL;
     }
 
-    dpusm_handle_t *dpusmh = NULL;
+    const size_t ncols = nparity + ndata;
+
+    dpusm_handle_t *raid_dpusmh = NULL;
 
     /* extract provider handles out of the dpusm handles */
-    const size_t col_provider_handles_size = sizeof(void *) * cols;
-    void **col_provider_handles = dpusm_mem_alloc(col_provider_handles_size);
-    for(uint64_t c = 0; c < cols; c++) {
-        dpusm_handle_t *col_dpusm_handle = (dpusm_handle_t *) col_dpusm_handles[c];
-        if (!col_dpusm_handle) {
+    const size_t provider_handles_size = sizeof(void *) * ncols;
+    void **provider_handles = dpusm_mem_alloc(provider_handles_size);
+    for(uint64_t c = 0; c < ncols; c++) {
+        dpusm_handle_t *col_handle = (dpusm_handle_t *) col_handles[c];
+        if (!col_handle) {
             goto cleanup;
         }
 
         /* make sure the columns are on the same provider as src */
-        if (provider != col_dpusm_handle->provider) {
+        if (provider != col_handle->provider) {
             goto cleanup;
         }
 
-        col_provider_handles[c] = col_dpusm_handle->handle;
+        provider_handles[c] = col_handle->handle;
     }
 
-    /* src_handle is not passed in since it has already been checked */
-    void *rr_handle = FUNCS(provider)->raid.alloc(raidn, cols,
-        col_provider_handles);
+    /* src is not passed in since it has already been checked */
+    void *raid_ctx = FUNCS(provider)->raid.alloc(nparity, ndata,
+        provider_handles);
 
-    dpusmh = dpusm_handle_construct(provider, rr_handle);
+    raid_dpusmh = dpusm_handle_construct(provider, raid_ctx);
 
-    if (!dpusmh) {
-        if (rr_handle) {
-            FUNCS(provider)->raid.free(rr_handle);
+    if (!raid_dpusmh) {
+        if (raid_ctx) {
+            FUNCS(provider)->raid.free(raid_ctx);
         }
     }
 
   cleanup:
-    dpusm_mem_free(col_provider_handles, col_provider_handles_size);
-    return dpusmh;
+    dpusm_mem_free(provider_handles, provider_handles_size);
+    return raid_dpusmh;
 }
 
 static int
