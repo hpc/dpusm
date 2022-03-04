@@ -79,6 +79,11 @@ typedef struct dpusm_provider_functions {
         void *data, size_t size, void *cksum);
 
     struct {
+        /*
+         * col_handles should contain both parity columns as well as
+         * data columns. The order will depend on the user. The data
+         * columns should normally be references to a src row.
+         */
         void *(*alloc)(size_t nparity, size_t ndata,
             void **col_handles);
 
@@ -89,7 +94,7 @@ typedef struct dpusm_provider_functions {
 
         /* create new allocations for the parity columns */
         int (*new_parity)(void *raid, uint64_t raidn,
-            void **new_dpusm_parity_cols, size_t *new_parity_sizes);
+            void **new_parity_cols, size_t *new_parity_sizes);
 
         /*
          * compare the contents of 2 handles

@@ -345,7 +345,7 @@ dpusm_raid_gen(void *raid) {
 
 static int
 dpusm_raid_new_parity(void *raid, uint64_t raidn,
-    void ***new_dpusm_parity_cols, size_t *new_parity_sizes) {
+    void ***new_parity_cols, size_t *new_parity_sizes) {
     CHECK_HANDLE(raid, dpusmh, DPUSM_ERROR);
     void *provider = dpusmh->provider;
 
@@ -363,8 +363,8 @@ dpusm_raid_new_parity(void *raid, uint64_t raidn,
     if (rc == DPUSM_OK) {
         /* wrap provider handles in DPUSM handles and send to user */
         for(uint64_t c = 0; c < raidn; c++) {
-            if (new_dpusm_parity_cols[c]) {
-                *(new_dpusm_parity_cols[c]) =
+            if (new_parity_cols[c]) {
+                *(new_parity_cols[c]) =
                     dpusm_handle_construct(provider, new_provider_parity_cols[c]);
             }
         }
@@ -372,8 +372,8 @@ dpusm_raid_new_parity(void *raid, uint64_t raidn,
     else {
         for(uint64_t c = 0; c < raidn; c++) {
             FUNCS(provider)->free(new_provider_parity_cols[c]);
-            if (new_dpusm_parity_cols[c]) {
-                *(new_dpusm_parity_cols[c]) = NULL;
+            if (new_parity_cols[c]) {
+                *(new_parity_cols[c]) = NULL;
             }
         }
     }

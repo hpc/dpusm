@@ -90,9 +90,10 @@ typedef struct dpusm_user_functions {
     struct {
         /*
          * col_handles should contain both parity columns as well as
-         * data columns. The order will depend on the caller. The data
-         * columns should normally be references into src. src is
-         * used as an "expected" location to compare against.
+         * data columns. The order will depend on the user. The data
+         * columns should normally be references to src. src is used
+         * to make sure all of the columns are located on the same
+         * provider.
          */
         void *(*alloc)(size_t nparity, size_t ndata,
             void *src, void **col_handles);
@@ -108,7 +109,7 @@ typedef struct dpusm_user_functions {
          * columns whose new_parity_sizes[c] == 0 will not be allocated
          */
         int (*new_parity)(void *raid, uint64_t raidn,
-            void ***new_dpusm_parity_cols, size_t *new_parity_sizes);
+            void ***new_parity_cols, size_t *new_parity_sizes);
 
         /*
          * compare the contents of 2 handles
