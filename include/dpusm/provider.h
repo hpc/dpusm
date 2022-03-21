@@ -10,13 +10,11 @@
 /* single provider data */
 typedef struct dpusm_provider_handle {
     const char *name;        /* reference to a string */
+    dpusm_pc_t capabilities; /* constant set of capabilities */
     const dpusm_pf_t *funcs; /* reference to a struct */
     atomic_t refs;           /* how many users are holding this provider */
     struct list_head list;
 } dpusm_ph_t;
-
-dpusm_ph_t *dpusmph_init(const char *name, const dpusm_pf_t *funcs);
-void dpusmph_destroy(dpusm_ph_t *dpusmph);
 
 typedef struct {
     struct list_head providers;  /* list of providers */

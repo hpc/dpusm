@@ -17,8 +17,15 @@ typedef struct dpusm_provider_functions {
      * required
      */
 
-    /* bitmasks of capabilities the provider brings */
-    int (*capabilities)(dpusm_pc_t *caps);
+    /*
+     * set algorithm bitmasks
+     *
+     * When the provider is registered, the DPUSM will call
+     * this function once while gathering capabilities.
+     */
+    int (*algorithms)(int *compress, int *decompress,
+                      int *checksum, int *checksum_byteorder,
+                      int *raid);
 
     /*
      * get a new offloader handle
@@ -72,10 +79,11 @@ typedef struct dpusm_provider_functions {
         size_t s_len, int level,
         size_t *c_len);
 
-    int (*decompress)(dpusm_compress_t alg,
+    int (*decompress)(dpusm_decompress_t alg,
         void *src, void *dst, int level);
 
-    int (*checksum)(dpusm_checksum_t alg, dpusm_byteorder_t order,
+    int (*checksum)(dpusm_checksum_t alg,
+        dpusm_checksum_byteorder_t order,
         void *data, size_t size, void *cksum);
 
     struct {

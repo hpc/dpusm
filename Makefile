@@ -8,7 +8,7 @@ DPUSM = $(current_dir)
 TARGET = dpusm
 
 obj-m += $(TARGET).o
-$(TARGET)-objs := src/dpusm.o src/provider.o src/user.o src/alloc.o
+$(TARGET)-objs := src/dpusm.o src/provider.o src/user.o src/alloc.o src/common.o
 
 ccflags-y=-std=gnu99 -Wno-declaration-after-statement -g3 -I$(DPUSM)/include -D_KERNEL=1 -DDPUSM_TRACK_ALLOCS=0
 

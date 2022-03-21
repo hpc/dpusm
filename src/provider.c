@@ -1,25 +1,6 @@
 #include <dpusm/alloc.h>
 #include <dpusm/provider.h>
 
-dpusm_ph_t *
-dpusmph_init(const char *name, const dpusm_pf_t *funcs)
-{
-    dpusm_ph_t *dpusmph = dpusm_mem_alloc(sizeof(dpusm_ph_t));
-    if (dpusmph) {
-        dpusmph->name = name;
-        dpusmph->funcs = funcs;
-        atomic_set(&dpusmph->refs, 0);
-    }
-
-    return dpusmph;
-}
-
-void
-dpusmph_destroy(dpusm_ph_t *dpusmph)
-{
-    dpusm_mem_free(dpusmph, sizeof(*dpusmph));
-}
-
 /* masks for bad function groups */
 static const int DPUSM_PROVIDER_BAD_GROUP_STRUCT   = (1 << 0);
 static const int DPUSM_PROVIDER_BAD_GROUP_REQUIRED = (1 << 1);
@@ -52,7 +33,7 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
      */
 
     const int required = (
-        !!funcs->capabilities +
+        !!funcs->algorithms +
         !!funcs->alloc +
         !!funcs->alloc_ref +
         !!funcs->get_size +
@@ -71,16 +52,16 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
         !!funcs->raid.rec);
 
     const int file = (
-            !!funcs->file.open +
-            !!funcs->file.write +
-            !!funcs->file.close);
+        !!funcs->file.open +
+        !!funcs->file.write +
+        !!funcs->file.close);
 
     const int disk = (
-            !!funcs->disk.open +
-            !!funcs->disk.invalidate +
-            !!funcs->disk.write +
-            !!funcs->disk.flush +
-            !!funcs->disk.close);
+        !!funcs->disk.open +
+        !!funcs->disk.invalidate +
+        !!funcs->disk.write +
+        !!funcs->disk.flush +
+        !!funcs->disk.close);
 
     // get bitmap of bad function groups
     const int rc = (
@@ -113,6 +94,108 @@ find_provider(dpusm_t *dpusm, const char *name) {
     }
 
     return NULL;
+}
+
+static void
+dpusmph_destroy(dpusm_ph_t *dpusmph)
+{
+    dpusm_mem_free(dpusmph, sizeof(*dpusmph));
+}
+
+static void print_supported(const char *name, const char *func)
+{
+    printk("Provider %s supports %s\n", name, func);
+}
+
+static dpusm_ph_t *
+dpusmph_init(const char *name, const dpusm_pf_t *funcs)
+{
+    dpusm_ph_t *dpusmph = dpusm_mem_alloc(sizeof(dpusm_ph_t));
+    if (dpusmph) {
+        /* fill in capabilities bitmasks */
+        if (funcs->mem_stats) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_MEM_STATS;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_MEM_STATS));
+        }
+
+        if (funcs->zero_fill) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_ZERO_FILL;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_ZERO_FILL));
+        }
+
+        if (funcs->all_zeros) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_ALL_ZEROS;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_ALL_ZEROS));
+        }
+
+        if (funcs->algorithms(&dpusmph->capabilities.compress,
+                              &dpusmph->capabilities.decompress,
+                              &dpusmph->capabilities.checksum,
+                              &dpusmph->capabilities.checksum_byteorder,
+                              &dpusmph->capabilities.raid) != DPUSM_OK) {
+            dpusmph_destroy(dpusmph);
+            return NULL;
+        }
+
+        if (funcs->compress && dpusmph->capabilities.compress) {
+            for(size_t i = 1 << 0; i < DPUSM_COMPRESS_MAX; i <<= 1) {
+                if (dpusmph->capabilities.compress & i) {
+                    print_supported(name, enum2str(DPUSM_COMPRESS_STR, i));
+                }
+            }
+        }
+
+        if (funcs->decompress && dpusmph->capabilities.decompress) {
+            for(size_t i = 1 << 0; i < DPUSM_COMPRESS_MAX; i <<= 1) {
+                if (dpusmph->capabilities.decompress & i) {
+                    print_supported(name, enum2str(DPUSM_DECOMPRESS_STR, i));
+                }
+            }
+        }
+
+        if (funcs->checksum && dpusmph->capabilities.checksum) {
+            for(size_t i = 1 << 0; i < DPUSM_CHECKSUM_MAX; i <<= 1) {
+                if (dpusmph->capabilities.checksum & i) {
+                    print_supported(name, enum2str(DPUSM_CHECKSUM_STR, i));
+                }
+            }
+        }
+
+        if (funcs->checksum && dpusmph->capabilities.checksum_byteorder) {
+            for(size_t i = 1 << 0; i < DPUSM_BYTEORDER_MAX; i <<= 1) {
+                if (dpusmph->capabilities.checksum_byteorder & i) {
+                    print_supported(name, enum2str(DPUSM_CHECKSUM_BYTEORDER_STR, i));
+                }
+            }
+        }
+
+        /* already checked for sanity */
+        if (funcs->raid.gen && dpusmph->capabilities.raid) {
+            for(size_t i = 1 << 0; i < DPUSM_RAID_MAX; i <<= 1) {
+                if (dpusmph->capabilities.raid & i) {
+                    print_supported(name, enum2str(DPUSM_RAID_STR, i));
+                }
+            }
+        }
+
+        /* already checked for sanity */
+        if (funcs->file.open) {
+            dpusmph->capabilities.io |= DPUSM_IO_FILE;
+            print_supported(name, enum2str(DPUSM_IO_STR, DPUSM_IO_FILE));
+        }
+
+        /* already checked for sanity */
+        if (funcs->disk.open) {
+            dpusmph->capabilities.io |= DPUSM_IO_DISK;
+            print_supported(name, enum2str(DPUSM_IO_STR, DPUSM_IO_DISK));
+        }
+
+        dpusmph->name = name;
+        dpusmph->funcs = funcs;
+        atomic_set(&dpusmph->refs, 0);
+    }
+
+    return dpusmph;
 }
 
 /* add a new provider */

@@ -27,7 +27,7 @@ typedef struct dpusm_user_functions {
     void *(*extract)(void *handle);
 
     /* capabilities provided by the provider */
-    int (*capabilities)(void *provider, dpusm_pc_t *caps);
+    int (*capabilities)(void *provider, dpusm_pc_t **caps);
 
     /*
      * get a new handle
@@ -81,10 +81,11 @@ typedef struct dpusm_user_functions {
         size_t s_len, int level,
         size_t *c_len);
 
-    int (*decompress)(dpusm_compress_t alg,
+    int (*decompress)(dpusm_decompress_t alg,
         void *src, void *dst, int level);
 
-    int (*checksum)(dpusm_checksum_t alg, dpusm_byteorder_t order,
+    int (*checksum)(dpusm_checksum_t alg,
+        dpusm_checksum_byteorder_t order,
         void *data, size_t size, void *cksum);
 
     struct {

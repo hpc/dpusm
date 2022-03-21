@@ -24,14 +24,14 @@ ptr_offset(void *ptr, size_t offset) {
 }
 
 static int
-dpusm_provider_capabilities(dpusm_pc_t *caps) {
-    caps->optional           = 0;
-    caps->compress           = 0;
-    caps->decompress         = 0;
-    caps->checksum           = 0;
-    caps->checksum_byteorder = 0;
-    caps->raid               = 0;
-    caps->io                 = 0;
+dpusm_provider_algorithms(int *compress, int *decompress,
+                          int *checksum, int *checksum_byteorder,
+                          int *raid) {
+    *compress           = 0;
+    *decompress         = 0;
+    *checksum           = 0;
+    *checksum_byteorder = 0;
+    *raid               = 0;
     return DPUSM_OK;
 }
 
@@ -119,7 +119,7 @@ dpusm_provider_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
 }
 
 const dpusm_pf_t example_dpusm_provider_functions = {
-    .capabilities       = dpusm_provider_capabilities,
+    .algorithms         = dpusm_provider_algorithms,
     .alloc              = dpusm_provider_alloc,
     .alloc_ref          = dpusm_provider_alloc_ref,
     .get_size           = dpusm_provider_get_size,

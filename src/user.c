@@ -111,12 +111,14 @@ dpusm_extract_provider(void *handle) {
 }
 
 static int
-dpusm_get_capabilities(void *provider, dpusm_pc_t *caps) {
+dpusm_get_capabilities(void *provider, dpusm_pc_t **caps) {
     CHECK_PROVIDER(provider, DPUSM_ERROR);
     if (!caps) {
         return DPUSM_ERROR;
     }
-    return FUNCS(provider)->capabilities(caps);
+
+    *caps = &((dpusm_ph_t *) provider)->capabilities;
+    return DPUSM_OK;;
 }
 
 static void *
@@ -224,41 +226,45 @@ dpusm_compress(dpusm_compress_t alg, void *src, void *dst, size_t s_len,
     int level, size_t *c_len) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
 
-    /* compression is optional */
-    if (!FUNCS(src_dpusmh->provider)->compress) {
+    dpusm_ph_t *provider = src_dpusmh->provider;
+    if (!FUNCS(provider)->compress ||               /* compression is optional */
+        !(provider->capabilities.compress & alg)) { /* make sure algorithm is implemented */
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(src_dpusmh->provider)->compress(alg, src_dpusmh->handle,
+    return FUNCS(provider)->compress(alg, src_dpusmh->handle,
         dst_dpusmh->handle, s_len, level, c_len);
 }
 
 static int
-dpusm_decompress(dpusm_compress_t alg,
+dpusm_decompress(dpusm_decompress_t alg,
     void *src, void *dst, int level) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
 
-    /* decompression is optional */
-    if (!FUNCS(src_dpusmh->provider)->decompress) {
+    dpusm_ph_t *provider = src_dpusmh->provider;
+    if (!FUNCS(provider)->decompress ||               /* decompression is optional */
+        !(provider->capabilities.decompress & alg)) { /* make sure algorithm is implemented */
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(src_dpusmh->provider)->decompress(alg,
-        src_dpusmh->handle, dst_dpusmh->handle, level);
+    return FUNCS(provider)->decompress(alg, src_dpusmh->handle,
+        dst_dpusmh->handle, level);
 }
 
 static int
-dpusm_checksum(dpusm_checksum_t alg, dpusm_byteorder_t order,
+dpusm_checksum(dpusm_checksum_t alg, dpusm_checksum_byteorder_t order,
     void *data, size_t size, void *cksum) {
     SAME_PROVIDERS(data, data_dpusmh, cksum, cksum_dpusmh, DPUSM_ERROR);
 
-    /* checksum is optional */
-    if (!FUNCS(data_dpusmh->provider)->checksum) {
+
+    dpusm_ph_t *provider = data_dpusmh->provider;
+    if (!FUNCS(data_dpusmh->provider)->checksum ||   /* checksum is optional */
+        !(provider->capabilities.checksum & alg)) {  /* make sure the algorithm is implemented */
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(data_dpusmh->provider)->checksum(alg,
-        order, data_dpusmh->handle, size, cksum_dpusmh->handle);
+    return FUNCS(provider)->checksum(alg, order,
+        data_dpusmh->handle, size, cksum_dpusmh->handle);
 }
 
 static void
@@ -286,10 +292,10 @@ static void *
 dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
     void **col_handles) {
     CHECK_HANDLE(src, src_dpusmh, NULL);
-    void *provider = src_dpusmh->provider;
+    dpusm_ph_t *provider = src_dpusmh->provider;
 
-    /* raid is optional */
-    if (!FUNCS(provider)->raid.alloc) {
+    if (!FUNCS(provider)->raid.alloc ||                       /* raid is optional */
+        (!(provider->capabilities.raid & (1 << nparity)))) {  /* at minumum, raid N generation is required */
         return NULL;
     }
 
@@ -334,23 +340,26 @@ dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
 static int
 dpusm_raid_gen(void *raid) {
     CHECK_HANDLE(raid, dpusmh, DPUSM_ERROR);
+    dpusm_ph_t *provider = dpusmh->provider;
 
     /* raid is optional */
-    if (!FUNCS(dpusmh->provider)->raid.gen) {
+    if (!FUNCS(provider)->raid.gen ||
+        !(provider->capabilities.raid & DPUSM_RAID_GEN)) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(dpusmh->provider)->raid.gen(dpusmh->handle);
+    return FUNCS(provider)->raid.gen(dpusmh->handle);
 }
 
 static int
 dpusm_raid_new_parity(void *raid, uint64_t raidn,
     void ***new_parity_cols, size_t *new_parity_sizes) {
     CHECK_HANDLE(raid, dpusmh, DPUSM_ERROR);
-    void *provider = dpusmh->provider;
+    dpusm_ph_t *provider = dpusmh->provider;
 
     /* raid is optional */
-    if (!FUNCS(provider)->raid.new_parity) {
+    if (!FUNCS(provider)->raid.new_parity ||
+        !(provider->capabilities.raid & DPUSM_RAID_REC)) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
@@ -395,19 +404,30 @@ dpusm_raid_cmp(void *lhs_handle, void *rhs_handle, int *diff) {
         return DPUSM_OK;
     }
 
-    return FUNCS(lhs_dpusmh->provider)->raid.cmp(lhs_dpusmh->handle, rhs_dpusmh->handle, diff);
+    dpusm_ph_t *provider = lhs_dpusmh->provider;
+
+    /* raid is optional */
+    if (!FUNCS(provider)->raid.cmp ||
+        !(provider->capabilities.raid & DPUSM_RAID_REC)) {
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
+    return FUNCS(provider)->raid.cmp(lhs_dpusmh->handle, rhs_dpusmh->handle, diff);
 }
 
 static int
 dpusm_raid_rec(void *raid, int *tgts, int ntgts) {
     CHECK_HANDLE(raid, dpusmh, DPUSM_ERROR);
 
+    dpusm_ph_t *provider = dpusmh->provider;
+
     /* raid is optional */
-    if (!FUNCS(dpusmh->provider)->raid.rec) {
+    if (!FUNCS(provider)->raid.rec ||
+        !(provider->capabilities.raid & DPUSM_RAID_REC)) {
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(dpusmh->provider)->raid.rec(dpusmh->handle, tgts, ntgts);
+    return FUNCS(provider)->raid.rec(dpusmh->handle, tgts, ntgts);
 }
 
 static void *
