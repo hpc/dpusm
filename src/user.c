@@ -122,14 +122,10 @@ dpusm_get_capabilities(void *provider, dpusm_pc_t **caps) {
 }
 
 static void *
-dpusm_alloc(void *provider, size_t size, size_t actual) {
-    if (size > actual) {
-        return NULL;
-    }
-
+dpusm_alloc(void *provider, size_t size) {
     CHECK_PROVIDER(provider, NULL);
     return dpusm_handle_construct(provider,
-        FUNCS(provider)->alloc(size, actual));
+        FUNCS(provider)->alloc(size));
 }
 
 static void *

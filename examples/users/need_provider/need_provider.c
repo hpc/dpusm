@@ -20,7 +20,7 @@ use_provider(const char *provider_name) {
     }
 
     /* new offloader allocation */
-    void *handle = dpusm->alloc(provider, TEST_BUF_LEN + 1, TEST_BUF_LEN + 1);
+    void *handle = dpusm->alloc(provider, TEST_BUF_LEN + 1);
     BUG_ON(!handle);
 
     /* copy memory buffer to offloader */

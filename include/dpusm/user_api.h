@@ -29,15 +29,8 @@ typedef struct dpusm_user_functions {
     /* capabilities provided by the provider */
     int (*capabilities)(void *provider, dpusm_pc_t **caps);
 
-    /*
-     * get a new handle
-     *
-     * size   - The amount of space that is expected to be used.
-     *          Allocations will be marked with this value.
-     * actual - The actual amount of space to request from the
-     *          provider.
-     */
-    void *(*alloc)(void *provider, size_t size, size_t actual);
+    /* get a new handle */
+    void *(*alloc)(void *provider, size_t size);
 
     /* reference an existing handle */
     void *(*alloc_ref)(void *src, size_t offset, size_t size);
