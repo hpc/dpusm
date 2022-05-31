@@ -79,7 +79,8 @@ typedef struct dpusm_provider_functions {
 
     int (*checksum)(dpusm_checksum_t alg,
         dpusm_checksum_byteorder_t order,
-        void *data, size_t size, void *cksum);
+        void *data, size_t size,
+        void *cksum, size_t cksum_size);
 
     struct {
         /*

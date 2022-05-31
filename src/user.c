@@ -251,7 +251,7 @@ dpusm_decompress(dpusm_decompress_t alg,
 
 static int
 dpusm_checksum(dpusm_checksum_t alg, dpusm_checksum_byteorder_t order,
-    void *data, size_t size, void *cksum) {
+    void *data, size_t size, void *cksum, size_t cksum_size) {
     CHECK_HANDLE(data, data_dpusmh, DPUSM_ERROR);
 
     dpusm_ph_t *provider = data_dpusmh->provider;
@@ -261,7 +261,7 @@ dpusm_checksum(dpusm_checksum_t alg, dpusm_checksum_byteorder_t order,
     }
 
     return FUNCS(provider)->checksum(alg, order,
-        data_dpusmh->handle, size, cksum);
+        data_dpusmh->handle, size, cksum, cksum_size);
 }
 
 static void
