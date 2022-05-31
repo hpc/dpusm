@@ -190,13 +190,15 @@ dpusm_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
 }
 
 static int
-dpusm_provider_mem_stats(void *provider, size_t *total, size_t *count,
-    size_t *size, size_t *actual) {
+dpusm_provider_mem_stats(void *provider,
+                         size_t *t_count, size_t *t_size, size_t *t_actual,
+                         size_t *a_count, size_t *a_size, size_t *a_actual) {
     CHECK_PROVIDER(provider, DPUSM_ERROR);
     if (!FUNCS(provider)->mem_stats) {
         return DPUSM_NOT_IMPLEMENTED;
     }
-    return FUNCS(provider)->mem_stats(total, count, size, actual);
+    return FUNCS(provider)->mem_stats(t_count, t_size, t_actual,
+                                      a_count, a_size, a_actual);
 }
 
 static int

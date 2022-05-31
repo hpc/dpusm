@@ -55,13 +55,16 @@ typedef struct dpusm_user_functions {
      * memory statistics
      * definition will depend on the provider, but in general:
      *
-     *     total:  count of all allocations made (never decreases)
-     *     count:  count of active allocations
-     *     size:   total requested size of active allocations
-     *     actual: total actual size of active allocations
+     *  count:  how many allocations there are
+     *  size:   how much space was requested
+     *  actual: how much space was actually provided
+     *
+     *  t_*:    total - never decreases
+     *  a_*:    active allocations
      */
-    int (*mem_stats)(void *provider, size_t *total, size_t *count,
-        size_t *size, size_t *actual);
+    int (*mem_stats)(void *provider,
+                     size_t *t_count, size_t *t_size, size_t *t_actual,
+                     size_t *a_count, size_t *a_size, size_t *a_actual);
 
     /* fill in a buffer with zeros */
     int (*zero_fill)(void *handle, size_t offset, size_t size);
