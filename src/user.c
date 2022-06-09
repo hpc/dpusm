@@ -470,7 +470,7 @@ dpusm_file_close(void *fp_handle) {
 
 #ifdef _KERNEL
 static void *
-dpusm_disk_open(void *provider, const char *path, fmode_t mode, void *holder) {
+dpusm_disk_open(void *provider, const char *path, struct block_device *bdev) {
     CHECK_PROVIDER(provider, NULL);
 
     /* disk operations are optional */
@@ -478,11 +478,14 @@ dpusm_disk_open(void *provider, const char *path, fmode_t mode, void *holder) {
         return NULL;
     }
 
+    if (IS_ERR(bdev)) {
+        return NULL;
+    }
+
     dpusm_dd_t data = {
         .path = path,
         .path_len = strlen(path),
-        .mode = mode,
-        .holder = holder,
+        .bdev = bdev,
     };
 
     return dpusm_handle_construct(provider,

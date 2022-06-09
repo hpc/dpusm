@@ -1,6 +1,10 @@
 #ifndef _DATA_PROCESSING_UNIT_SERVICES_MODULE_USER_API_H
 #define _DATA_PROCESSING_UNIT_SERVICES_MODULE_USER_API_H
 
+#ifdef _KERNEL
+#include <linux/blkdev.h>
+#endif
+
 #include <dpusm/common.h>
 
 /*
@@ -132,8 +136,7 @@ typedef struct dpusm_user_functions {
 #ifdef _KERNEL
     struct {
         /* open should return NULL on error */
-        void *(*open)(void *provider, const char *path,
-            fmode_t mode, void *holder);
+        void *(*open)(void *provider, const char *path, struct block_device *bdev);
         int (*invalidate)(void *disk_handle);
         int (*write)(void *disk_handle, void *data,
             size_t io_size, size_t trailing_zeros,

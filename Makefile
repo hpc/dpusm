@@ -10,7 +10,7 @@ TARGET = dpusm
 obj-m += $(TARGET).o
 $(TARGET)-objs := src/dpusm.o src/provider.o src/user.o src/alloc.o src/common.o
 
-ccflags-y=-std=gnu99 -Wno-declaration-after-statement -g3 -I$(DPUSM)/include -D_KERNEL=1 -DDPUSM_TRACK_ALLOCS=0
+ccflags-y=-std=gnu99 -Wno-declaration-after-statement -O3 -g0 -I$(DPUSM)/include -D_KERNEL=1 -DDPUSM_TRACK_ALLOCS=0
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(DPUSM) modules

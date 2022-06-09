@@ -1,14 +1,17 @@
 #ifndef _DATA_PROCESSING_UNIT_SERVICES_MODULE_PROVIDER_API_H
 #define _DATA_PROCESSING_UNIT_SERVICES_MODULE_PROVIDER_API_H
 
+#ifdef _KERNEL
+#include <linux/blkdev.h>
+#endif
+
 #include <dpusm/common.h>
 
 /* provider should copy whatever data it needs out of here */
 typedef struct dpusm_provider_disk_data {
     const char *path;
     size_t path_len;
-    fmode_t mode;
-    void *holder;
+    struct block_device *bdev;
 } dpusm_dd_t;
 
 /* signatures of functions that the provider should implement */
