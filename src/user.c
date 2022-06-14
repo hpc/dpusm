@@ -255,8 +255,9 @@ dpusm_checksum(dpusm_checksum_t alg, dpusm_checksum_byteorder_t order,
     CHECK_HANDLE(data, data_dpusmh, DPUSM_ERROR);
 
     dpusm_ph_t *provider = data_dpusmh->provider;
-    if (!FUNCS(data_dpusmh->provider)->checksum ||   /* checksum is optional */
-        !(provider->capabilities.checksum & alg)) {  /* make sure the algorithm is implemented */
+    if (!FUNCS(data_dpusmh->provider)->checksum ||              /* checksum is optional */
+        !(provider->capabilities.checksum & alg) ||             /* make sure the algorithm is implemented */
+        !(provider->capabilities.checksum_byteorder & order)) { /* make sure the byte order is supported */
         return DPUSM_NOT_IMPLEMENTED;
     }
 
