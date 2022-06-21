@@ -288,7 +288,7 @@ dpusm_raid_free(void *raid) {
 
 static void *
 dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
-    void **col_handles) {
+    void **col_handles, size_t *col_sizes) {
     CHECK_HANDLE(src, src_dpusmh, NULL);
     dpusm_ph_t *provider = src_dpusmh->provider;
 
@@ -320,7 +320,7 @@ dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
 
     /* src is not passed in since it has already been checked */
     void *raid_ctx = FUNCS(provider)->raid.alloc(nparity, ndata,
-        provider_handles);
+        provider_handles, col_sizes);
 
     raid_dpusmh = dpusm_handle_construct(provider, raid_ctx);
 

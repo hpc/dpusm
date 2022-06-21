@@ -95,10 +95,12 @@ typedef struct dpusm_user_functions {
          * data columns. The order will depend on the user. The data
          * columns should normally be references to src. src is used
          * to make sure all of the columns are located on the same
-         * provider.
+         * provider. col_sizes should be the amount of data from each
+         * column that is used to calculate parity bits, which may be
+         * smaller than the allocated size.
          */
         void *(*alloc)(size_t nparity, size_t ndata,
-            void *src, void **col_handles);
+            void *src, void **col_handles, size_t *col_sizes);
 
         void (*free)(void *raid);
 
