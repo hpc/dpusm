@@ -98,7 +98,7 @@ dpusm_exit(void)
     struct list_head *next = NULL;
     list_for_each_safe(it, next, &dpusm.providers) {
         dpusm_ph_t *provider = list_entry(it, dpusm_ph_t, list);
-        dpusm_provider_unregister_handle(&dpusm, provider);
+        dpusm_provider_unregister_handle(&dpusm, &provider->self);
     }
 
     dpusm_provider_write_unlock(&dpusm);
