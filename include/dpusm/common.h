@@ -65,14 +65,14 @@ typedef enum {
 extern const char *DPUSM_CHECKSUM_BYTEORDER_STR[];
 
 typedef enum {
-    DPUSM_RAID_1_GEN = 1 << 0,
-    DPUSM_RAID_2_GEN = 1 << 1,
-    DPUSM_RAID_3_GEN = 1 << 2,
-    DPUSM_RAID_1_REC = 1 << 3,
-    DPUSM_RAID_2_REC = 1 << 4,
-    DPUSM_RAID_3_REC = 1 << 5,
+    DPUSM_RAID_1_GEN = 1 << 1,
+    DPUSM_RAID_2_GEN = 1 << 2,
+    DPUSM_RAID_3_GEN = 1 << 3,
+    DPUSM_RAID_1_REC = 1 << 4,
+    DPUSM_RAID_2_REC = 1 << 5,
+    DPUSM_RAID_3_REC = 1 << 6,
 
-    DPUSM_RAID_MAX   = 1 << 6,
+    DPUSM_RAID_MAX   = 1 << 7,
 
     /* don't pass into enum2index*/
     DPUSM_RAID_GEN   = DPUSM_RAID_1_GEN | DPUSM_RAID_2_GEN | DPUSM_RAID_3_GEN,
