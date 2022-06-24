@@ -351,3 +351,17 @@ void
 dpusm_provider_write_unlock(dpusm_t *dpusm) {
     write_unlock(&dpusm->lock);
 }
+
+void dpusm_provider_invalidate(dpusm_t *dpusm, const char *name) {
+    write_lock(&dpusm->lock);
+    dpusm_ph_t *provider = find_provider(dpusm, name);
+    if (provider) {
+        provider->funcs = NULL;
+        memset(&provider->capabilities, 0, sizeof(provider->capabilities));
+        printk("dpusm_invalidate: Provider \"%s\" has been invalidated with %d users active.\n", name, atomic_read(&provider->refs));
+    }
+    else {
+        printk("dpusm_invalidate Error: Did not find provider \"%s\"\n", name);
+    }
+    write_unlock(&dpusm->lock);
+}

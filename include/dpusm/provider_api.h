@@ -146,4 +146,11 @@ int dpusm_unregister_bsd(const char *name);
 int dpusm_register_gpl(const char *name, const dpusm_pf_t *funcs);
 int dpusm_unregister_gpl(const char *name);
 
+/*
+ * call when backing DPU goes down unexpectedly
+ *
+ * provider is not unregistered, so dpusm_unregister still needs to be called
+ */
+void dpusm_invalidate(const char *name);
+
 #endif

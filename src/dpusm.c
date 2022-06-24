@@ -38,11 +38,24 @@ dpusm_unregister_gpl(const char *name) {
 EXPORT_SYMBOL_GPL(dpusm_register_gpl);
 EXPORT_SYMBOL_GPL(dpusm_unregister_gpl);
 
+/*
+ * Call when backing DPU goes down unexpectedly
+ *
+ * Provider is not unregistered, so dpusm_unregister still needs to be called.
+ * Using name instead of handle because the provider handle is not available to the provider.
+ */
+void dpusm_invalidate(const char *name) {
+    dpusm_provider_invalidate(&dpusm, name);
+}
+EXPORT_SYMBOL(dpusm_invalidate);
+
+/* called by user.c */
 void *
 dpusm_get(const char *name) {
     return dpusm_provider_get(&dpusm, name);
 }
 
+/* called by user.c */
 int
 dpusm_put(void *handle) {
     return dpusm_provider_put(&dpusm, handle);

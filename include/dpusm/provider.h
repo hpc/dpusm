@@ -36,4 +36,11 @@ int dpusm_provider_put(dpusm_t *dpusm, void *handle);
 void dpusm_provider_write_lock(dpusm_t *dpusm);
 void dpusm_provider_write_unlock(dpusm_t *dpusm);
 
+/*
+ * call when backing DPU goes down unexpectedly
+ *
+ * provider is not unregistered, so dpusm_unregister still needs to be called
+ */
+void dpusm_provider_invalidate(dpusm_t *dpusm, const char *name);
+
 #endif
