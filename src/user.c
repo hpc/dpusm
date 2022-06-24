@@ -42,7 +42,22 @@ dpusm_handle_free(dpusm_handle_t *dpusmh) {
  */
 static int
 dpusm_provider_sane(dpusm_ph_t **provider) {
-    return (provider && *provider && FUNCS(provider))?DPUSM_OK:DPUSM_ERROR;
+    if (!provider) {
+        printk("Error: Got bad provider\n");
+        return DPUSM_PROVIDER_NOT_EXISTS;
+    }
+
+    if (!*provider) {
+        printk("Error: Unregistered provider: %p\n", provider);
+        return DPUSM_PROVIDER_UNREGISTERED;
+    }
+
+    if (!FUNCS(provider)) {
+        printk("Error: Invalidated provider: %s\n", (*provider)->name);
+        return DPUSM_PROVIDER_INVALIDATED;
+    }
+
+    return DPUSM_OK;
 }
 
 #define CHECK_PROVIDER(provider, ret)                           \
@@ -85,7 +100,12 @@ static void *
 dpusm_get_provider(const char *name) {
     dpusm_ph_t **provider = (dpusm_ph_t **) dpusm_get(name);
     if (!provider) {
-        printk("Provider with name \"%s\" not found.\n", name);
+        printk("Error: Provider with name \"%s\" not found.\n", name);
+        return NULL;
+    }
+
+    if (!FUNCS(provider)) {
+        printk("Error: Provider with name \"%s\" found, but has been invalidated.\n", name);
         return NULL;
     }
 
