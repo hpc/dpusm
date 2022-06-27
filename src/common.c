@@ -33,6 +33,7 @@ const char *DPUSM_CHECKSUM_BYTEORDER_STR[] = {
 };
 
 const char *DPUSM_RAID_STR[] = {
+    "RAID INVALID",
     "RAID 1 GEN",
     "RAID 2 GEN",
     "RAID 3 GEN",

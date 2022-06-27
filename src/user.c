@@ -285,6 +285,12 @@ dpusm_checksum(dpusm_checksum_t alg, dpusm_checksum_byteorder_t order,
         data_dpusmh->handle, size, cksum, cksum_size);
 }
 
+static int dpusm_raid_can_compute(void *provider, size_t nparity, size_t ndata,
+    size_t *col_sizes, int rec) {
+    CHECK_PROVIDER(provider, DPUSM_ERROR);
+    return FUNCS(provider)->raid.can_compute(nparity, ndata, col_sizes, rec);
+}
+
 static void
 dpusm_raid_free(void *raid) {
     if (!raid) {
@@ -346,7 +352,7 @@ dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
 
     if (!raid_dpusmh) {
         if (raid_ctx) {
-            FUNCS(provider)->raid.free(raid_ctx);
+             FUNCS(provider)->raid.free(raid_ctx);
         }
     }
 
@@ -598,6 +604,7 @@ static const dpusm_uf_t user_functions = {
     .decompress         = dpusm_decompress,
     .checksum           = dpusm_checksum,
     .raid               = {
+                              .can_compute        = dpusm_raid_can_compute,
                               .alloc              = dpusm_raid_alloc,
                               .free               = dpusm_raid_free,
                               .gen                = dpusm_raid_gen,

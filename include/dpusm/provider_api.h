@@ -86,6 +86,9 @@ typedef struct dpusm_provider_functions {
         void *cksum, size_t cksum_size);
 
     struct {
+        int (*can_compute)(size_t nparity, size_t ndata,
+            size_t *col_sizes, int rec);
+
         /*
          * col_handles should contain both parity columns as well as
          * data columns. The order will depend on the user. col_sizes
