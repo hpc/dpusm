@@ -133,6 +133,7 @@ typedef struct dpusm_user_functions {
     struct {
         /* open should return NULL on error */
         void *(*open)(void *provider, const char *path, int flags, int mode);
+        /* returns E errors */
         int (*write)(void *fp_handle, void *data, size_t size,
              size_t trailing_zeros, loff_t offset, ssize_t *resid, int *err);
         int (*close)(void *fp_handle);
@@ -143,10 +144,12 @@ typedef struct dpusm_user_functions {
         /* open should return NULL on error */
         void *(*open)(void *provider, const char *path, struct block_device *bdev);
         int (*invalidate)(void *disk_handle);
+        /* returns E errors */
         int (*write)(void *disk_handle, void *data,
             size_t io_size, size_t trailing_zeros,
             uint64_t io_offset, int failfast, int flags,
             void *ptr, dpusm_dwc_t write_completion);
+        /* returns E errors */
         int (*flush)(void *disk_handle, void *ptr,
             dpusm_dfc_t flush_completion);
         int (*close)(void *disk_handle);
