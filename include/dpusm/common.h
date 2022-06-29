@@ -49,8 +49,9 @@ typedef dpusm_compress_t dpusm_decompress_t;
 extern const char **DPUSM_DECOMPRESS_STR;
 
 typedef enum {
-    DPUSM_CHECKSUM_FLETCHER_4 = 1 << 0,
-    DPUSM_CHECKSUM_MAX        = 1 << 1,
+    DPUSM_CHECKSUM_FLETCHER_2 = 1 << 0,
+    DPUSM_CHECKSUM_FLETCHER_4 = 1 << 1,
+    DPUSM_CHECKSUM_MAX        = 1 << 2,
 } dpusm_checksum_t;
 
 extern const char *DPUSM_CHECKSUM_STR[];
@@ -74,7 +75,7 @@ typedef enum {
 
     DPUSM_RAID_MAX   = 1 << 7,
 
-    /* don't pass into enum2index*/
+    /* don't pass into enum2index */
     DPUSM_RAID_GEN   = DPUSM_RAID_1_GEN | DPUSM_RAID_2_GEN | DPUSM_RAID_3_GEN,
     DPUSM_RAID_REC   = DPUSM_RAID_1_REC | DPUSM_RAID_2_REC | DPUSM_RAID_3_REC,
 } dpusm_raid_t;

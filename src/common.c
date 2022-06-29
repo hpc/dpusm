@@ -24,6 +24,7 @@ const char *DPUSM_COMPRESS_STR[] = {
 const char **DPUSM_DECOMPRESS_STR = DPUSM_COMPRESS_STR;
 
 const char *DPUSM_CHECKSUM_STR[] = {
+    "Fletcher 2",
     "Fletcher 4",
 };
 
