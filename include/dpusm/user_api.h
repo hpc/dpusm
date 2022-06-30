@@ -145,13 +145,12 @@ typedef struct dpusm_user_functions {
         void *(*open)(void *provider, const char *path, struct block_device *bdev);
         int (*invalidate)(void *disk_handle);
         /* returns E errors */
-        int (*write)(void *disk_handle, void *data,
-            size_t io_size, size_t trailing_zeros,
-            uint64_t io_offset, int failfast, int flags,
-            void *ptr, dpusm_dwc_t write_completion);
+        int (*write)(void *disk_handle, void *data, size_t data_size,
+            size_t trailing_zeros, uint64_t io_offset, int flags,
+            dpusm_dwc_t write_completion, void *wc_args);
         /* returns E errors */
-        int (*flush)(void *disk_handle, void *ptr,
-            dpusm_dfc_t flush_completion);
+        int (*flush)(void *disk_handle, dpusm_dfc_t flush_completion,
+            void *fc_args);
         int (*close)(void *disk_handle);
     } disk;
 #endif

@@ -532,10 +532,9 @@ dpusm_disk_invalidate(void *disk) {
 }
 
 static int
-dpusm_disk_write(void *disk, void *data,
-    size_t io_size, size_t trailing_zeros,
-    uint64_t io_offset, int failfast, int flags,
-    void *ptr, dpusm_dwc_t write_completion) {
+dpusm_disk_write(void *disk, void *data, size_t data_size,
+    size_t trailing_zeros, uint64_t io_offset, int flags,
+    dpusm_dwc_t write_completion, void *wc_args) {
     if (!write_completion) {
         return DPUSM_ERROR;
     }
@@ -548,13 +547,12 @@ dpusm_disk_write(void *disk, void *data,
     }
 
     return FUNCS(disk_dpusmh->provider)->disk.write(disk_dpusmh->handle,
-        dpusmh->handle, io_size, trailing_zeros, io_offset, failfast, flags,
-        ptr, write_completion);
+        dpusmh->handle, data_size, trailing_zeros, io_offset, flags,
+        write_completion, wc_args);
 }
 
 static int
-dpusm_disk_flush(void *disk, void *ptr,
-    dpusm_dfc_t flush_completion) {
+dpusm_disk_flush(void *disk, dpusm_dfc_t flush_completion, void *fc_args) {
     if (!flush_completion) {
         return DPUSM_ERROR;
     }
@@ -567,7 +565,7 @@ dpusm_disk_flush(void *disk, void *ptr,
     }
 
     return FUNCS(disk_dpusmh->provider)->disk.flush(disk_dpusmh->handle,
-        ptr, flush_completion);
+        flush_completion, fc_args);
 }
 
 static int
