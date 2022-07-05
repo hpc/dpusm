@@ -98,6 +98,10 @@ dpusm_provider_sane(dpusm_ph_t **provider) {
 
 static void *
 dpusm_get_provider(const char *name) {
+    if (strlen(name) == 0) {
+        return NULL;
+    }
+
     dpusm_ph_t **provider = (dpusm_ph_t **) dpusm_get(name);
     if (!provider) {
         printk("Error: Provider with name \"%s\" not found.\n", name);
