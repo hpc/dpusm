@@ -37,7 +37,7 @@ use_provider(const char *provider_name, bool invalidate) {
 
     /* copy memory buffer to offloader */
     dpusm_mv_t mv_off = { .handle = handle, .offset = 0 };
-    dpusm->copy_from_mem(&mv_off, TEST_BUF, TEST_BUF_LEN);
+    dpusm->copy.from.generic(&mv_off, TEST_BUF, TEST_BUF_LEN);
 
     /* new memory allocation */
     void *buf = kmalloc(TEST_BUF_LEN, GFP_KERNEL);
@@ -45,7 +45,7 @@ use_provider(const char *provider_name, bool invalidate) {
 
     /* copy offloader data to memory */
     dpusm_mv_t mv_on = { .handle = handle, .offset = 0 };
-    dpusm->copy_to_mem(&mv_on, buf, TEST_BUF_LEN);
+    dpusm->copy.to.generic(&mv_on, buf, TEST_BUF_LEN);
 
     /* contents should match */
     BUG_ON(memcmp(buf, TEST_BUF, TEST_BUF_LEN));

@@ -27,9 +27,8 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
     }
 
     /*
-     * mem_stats, zero_fill, all_zeros, compress, decompress, and
-     * checksum may be defined as needed. They are not grouped
-     * together like the other functions.
+     * Other functions may be defined as needed. They are
+     * not grouped together like these functions.
      */
 
     const int required = (
@@ -38,8 +37,8 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
         !!funcs->alloc_ref +
         !!funcs->get_size +
         !!funcs->free +
-        !!funcs->copy_from_mem +
-        !!funcs->copy_to_mem);
+        !!funcs->copy.from.generic +
+        !!funcs->copy.to.generic);
 
     const int raid_gen = (
         !!funcs->raid.can_compute +
@@ -114,6 +113,26 @@ dpusmph_init(const char *name, const dpusm_pf_t *funcs)
     dpusm_ph_t *dpusmph = dpusm_mem_alloc(sizeof(dpusm_ph_t));
     if (dpusmph) {
         /* fill in capabilities bitmasks */
+        if (funcs->copy.from.ptr) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_COPY_FROM_PTR;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_COPY_FROM_PTR));
+        }
+
+        if (funcs->copy.to.ptr) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_COPY_TO_PTR;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_COPY_TO_PTR));
+        }
+
+        if (funcs->copy.from.scatterlist) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_COPY_FROM_SCATTERLIST;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_COPY_FROM_SCATTERLIST));
+        }
+
+        if (funcs->copy.to.scatterlist) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_COPY_TO_SCATTERLIST;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_COPY_TO_SCATTERLIST));
+        }
+
         if (funcs->mem_stats) {
             dpusmph->capabilities.optional |= DPUSM_OPTIONAL_MEM_STATS;
             print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_MEM_STATS));
@@ -138,44 +157,51 @@ dpusmph_init(const char *name, const dpusm_pf_t *funcs)
             return NULL;
         }
 
-        if (funcs->compress && dpusmph->capabilities.compress) {
-            for(size_t i = 1 << 0; i < DPUSM_COMPRESS_MAX; i <<= 1) {
-                if (dpusmph->capabilities.compress & i) {
-                    print_supported(name, enum2str(DPUSM_COMPRESS_STR, i));
-                }
+        if (!funcs->compress) {
+            dpusmph->capabilities.compress = 0;
+        }
+
+        for(size_t i = 1 << 0; i < DPUSM_COMPRESS_MAX; i <<= 1) {
+            if (dpusmph->capabilities.compress & i) {
+                print_supported(name, enum2str(DPUSM_COMPRESS_STR, i));
             }
         }
 
-        if (funcs->decompress && dpusmph->capabilities.decompress) {
-            for(size_t i = 1 << 0; i < DPUSM_COMPRESS_MAX; i <<= 1) {
-                if (dpusmph->capabilities.decompress & i) {
-                    print_supported(name, enum2str(DPUSM_DECOMPRESS_STR, i));
-                }
+        if (!funcs->decompress) {
+            dpusmph->capabilities.decompress = 0;
+        }
+
+        for(size_t i = 1 << 0; i < DPUSM_COMPRESS_MAX; i <<= 1) {
+            if (dpusmph->capabilities.decompress & i) {
+                print_supported(name, enum2str(DPUSM_DECOMPRESS_STR, i));
             }
         }
 
-        if (funcs->checksum && dpusmph->capabilities.checksum) {
-            for(size_t i = 1 << 0; i < DPUSM_CHECKSUM_MAX; i <<= 1) {
-                if (dpusmph->capabilities.checksum & i) {
-                    print_supported(name, enum2str(DPUSM_CHECKSUM_STR, i));
-                }
+        if (!funcs->checksum) {
+            dpusmph->capabilities.checksum = 0;
+            dpusmph->capabilities.checksum_byteorder = 0;
+        }
+
+        for(size_t i = 1 << 0; i < DPUSM_CHECKSUM_MAX; i <<= 1) {
+            if (dpusmph->capabilities.checksum & i) {
+                print_supported(name, enum2str(DPUSM_CHECKSUM_STR, i));
             }
         }
 
-        if (funcs->checksum && dpusmph->capabilities.checksum_byteorder) {
-            for(size_t i = 1 << 0; i < DPUSM_BYTEORDER_MAX; i <<= 1) {
-                if (dpusmph->capabilities.checksum_byteorder & i) {
-                    print_supported(name, enum2str(DPUSM_CHECKSUM_BYTEORDER_STR, i));
-                }
+        for(size_t i = 1 << 0; i < DPUSM_BYTEORDER_MAX; i <<= 1) {
+            if (dpusmph->capabilities.checksum_byteorder & i) {
+                print_supported(name, enum2str(DPUSM_CHECKSUM_BYTEORDER_STR, i));
             }
         }
 
         /* already checked for sanity */
-        if (funcs->raid.gen && dpusmph->capabilities.raid) {
-            for(size_t i = 1 << 0; i < DPUSM_RAID_MAX; i <<= 1) {
-                if (dpusmph->capabilities.raid & i) {
-                    print_supported(name, enum2str(DPUSM_RAID_STR, i));
-                }
+        if (!funcs->raid.gen) {
+            dpusmph->capabilities.raid = 0;
+        }
+
+        for(size_t i = 1 << 0; i < DPUSM_RAID_MAX; i <<= 1) {
+            if (dpusmph->capabilities.raid & i) {
+                print_supported(name, enum2str(DPUSM_RAID_STR, i));
             }
         }
 
@@ -184,11 +210,17 @@ dpusmph_init(const char *name, const dpusm_pf_t *funcs)
             dpusmph->capabilities.io |= DPUSM_IO_FILE;
             print_supported(name, enum2str(DPUSM_IO_STR, DPUSM_IO_FILE));
         }
+        else {
+            dpusmph->capabilities.io &= ~DPUSM_IO_FILE;
+        }
 
         /* already checked for sanity */
         if (funcs->disk.open) {
             dpusmph->capabilities.io |= DPUSM_IO_DISK;
             print_supported(name, enum2str(DPUSM_IO_STR, DPUSM_IO_DISK));
+        }
+        else {
+            dpusmph->capabilities.io &= ~DPUSM_IO_DISK;
         }
 
         dpusmph->name = name;

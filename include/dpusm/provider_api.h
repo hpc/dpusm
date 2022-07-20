@@ -1,9 +1,8 @@
 #ifndef _DATA_PROCESSING_UNIT_SERVICES_MODULE_PROVIDER_API_H
 #define _DATA_PROCESSING_UNIT_SERVICES_MODULE_PROVIDER_API_H
 
-#ifdef _KERNEL
 #include <linux/blkdev.h>
-#endif
+#include <linux/scatterlist.h>
 
 #include <dpusm/common.h>
 
@@ -42,11 +41,41 @@ typedef struct dpusm_provider_functions {
     /* free an offloader handle */
     void (*free)(void *handle);
 
-    /* memory -> offloader */
-    int (*copy_from_mem)(dpusm_mv_t *mv, const void *buf, size_t size);
+    struct {
+        /* memory -> offloader */
+        struct {
+            /* required */
+            /* pass in an address that should not be directly accessed */
+            int (*generic)(dpusm_mv_t *mv, const void *buf, size_t size);
 
-    /* offloader -> memory */
-    int (*copy_to_mem)(dpusm_mv_t *mv, void *buf, size_t size);
+            /* optional */
+            /* pass in an address that can be directly accessed (i.e. DMA) */
+            int (*ptr)(dpusm_mv_t *mv, const void *buf, size_t size);
+
+            /* optional */
+            int (*scatterlist)(dpusm_mv_t *mv,
+                struct scatterlist *sgl,
+                unsigned int nents,
+                size_t size);
+        } from;
+
+        /* offloader -> memory */
+        struct {
+            /* required */
+            /* pass in an address that should not be directly accessed */
+            int (*generic)(dpusm_mv_t *mv, void *buf, size_t size);
+
+            /* optional */
+            /* pass in an address that can be directly accessed (i.e. DMA) */
+            int (*ptr)(dpusm_mv_t *mv, void *buf, size_t size);
+
+            /* optional */
+            int (*scatterlist)(dpusm_mv_t *mv,
+                struct scatterlist *sgl,
+                unsigned int nents,
+                size_t size);
+        } to;
+    } copy;
 
     /*
      * optional

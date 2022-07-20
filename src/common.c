@@ -3,6 +3,10 @@
 #include <dpusm/common.h>
 
 const char *DPUSM_OPTIONAL_STR[] = {
+    "copy_from_ptr",
+    "copy_to_ptr",
+    "copy_from_scatterlist",
+    "copy_to_scatterlist",
     "mem_stats",
     "zero_fill",
     "all_zeros",

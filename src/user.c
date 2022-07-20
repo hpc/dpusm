@@ -180,8 +180,8 @@ dpusm_free(void *handle) {
 }
 
 static int
-dpusm_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
-    if (!mv) {
+dpusm_copy_from_generic(dpusm_mv_t *mv, const void *buf, size_t size) {
+    if (!mv || !buf) {
         return DPUSM_ERROR;
     }
 
@@ -192,13 +192,13 @@ dpusm_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
         .offset = mv->offset,
     };
 
-    return FUNCS(dpusmh->provider)->copy_from_mem(&actual_mv,
+    return FUNCS(dpusmh->provider)->copy.from.generic(&actual_mv,
         buf, size);
 }
 
 static int
-dpusm_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
-    if (!mv) {
+dpusm_copy_to_generic(dpusm_mv_t *mv, void *buf, size_t size) {
+    if (!mv || !buf) {
         return DPUSM_ERROR;
     }
 
@@ -209,20 +209,112 @@ dpusm_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
         .offset = mv->offset,
     };
 
-    return FUNCS(dpusmh->provider)->copy_to_mem(&actual_mv,
+    return FUNCS(dpusmh->provider)->copy.to.generic(&actual_mv,
         buf, size);
+}
+
+static int
+dpusm_copy_from_ptr(dpusm_mv_t *mv, const void *buf, size_t size) {
+    if (!mv || !buf) {
+        return DPUSM_ERROR;
+    }
+
+    CHECK_HANDLE(mv->handle, dpusmh, DPUSM_ERROR);
+
+    dpusm_ph_t **provider = dpusmh->provider;
+    if (!FUNCS(provider)->copy.from.ptr) {  /* copy from ptr is optional */
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
+    dpusm_mv_t actual_mv = {
+        .handle = dpusmh->handle,
+        .offset = mv->offset,
+    };
+
+    return FUNCS(provider)->copy.from.ptr(&actual_mv,
+        buf, size);
+}
+
+static int
+dpusm_copy_to_ptr(dpusm_mv_t *mv, void *buf, size_t size) {
+    if (!mv || !buf) {
+        return DPUSM_ERROR;
+    }
+
+    CHECK_HANDLE(mv->handle, dpusmh, DPUSM_ERROR);
+
+    dpusm_ph_t **provider = dpusmh->provider;
+    if (!FUNCS(provider)->copy.to.ptr) {  /* copy to ptr is optional */
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
+    dpusm_mv_t actual_mv = {
+        .handle = dpusmh->handle,
+        .offset = mv->offset,
+    };
+
+    return FUNCS(provider)->copy.to.ptr(&actual_mv,
+        buf, size);
+}
+
+static int
+dpusm_copy_from_scatterlist(dpusm_mv_t *mv,
+    struct scatterlist *sgl, unsigned int nents,
+    size_t size) {
+    if (!mv || !sgl) {
+        return DPUSM_ERROR;
+    }
+
+    CHECK_HANDLE(mv->handle, dpusmh, DPUSM_ERROR);
+
+    dpusm_ph_t **provider = dpusmh->provider;
+    if (!FUNCS(provider)->copy.from.scatterlist) {  /* copy from scatterlist is optional */
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
+    dpusm_mv_t actual_mv = {
+        .handle = dpusmh->handle,
+        .offset = mv->offset,
+    };
+
+    return FUNCS(provider)->copy.from.scatterlist(&actual_mv,
+        sgl, nents, size);
+}
+
+static int
+dpusm_copy_to_scatterlist(dpusm_mv_t *mv,
+    struct scatterlist *sgl, unsigned int nents,
+    size_t size) {
+    if (!mv || !sgl) {
+        return DPUSM_ERROR;
+    }
+
+    CHECK_HANDLE(mv->handle, dpusmh, DPUSM_ERROR);
+
+    dpusm_ph_t **provider = dpusmh->provider;
+    if (!FUNCS(provider)->copy.to.scatterlist) {  /* copy to scatterlist is optional */
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
+    dpusm_mv_t actual_mv = {
+        .handle = dpusmh->handle,
+        .offset = mv->offset,
+    };
+
+    return FUNCS(provider)->copy.to.scatterlist(&actual_mv,
+        sgl, nents, size);
 }
 
 static int
 dpusm_provider_mem_stats(void *provider,
-                         size_t *t_count, size_t *t_size, size_t *t_actual,
-                         size_t *a_count, size_t *a_size, size_t *a_actual) {
+    size_t *t_count, size_t *t_size, size_t *t_actual,
+    size_t *a_count, size_t *a_size, size_t *a_actual) {
     CHECK_PROVIDER(provider, DPUSM_ERROR);
     if (!FUNCS(provider)->mem_stats) {
         return DPUSM_NOT_IMPLEMENTED;
     }
     return FUNCS(provider)->mem_stats(t_count, t_size, t_actual,
-                                      a_count, a_size, a_actual);
+        a_count, a_size, a_actual);
 }
 
 static int
@@ -244,12 +336,12 @@ dpusm_all_zeros(void *handle, size_t offset, size_t size) {
 }
 
 static int
-dpusm_compress(dpusm_compress_t alg, void *src, void *dst, size_t s_len,
-    int level, size_t *c_len) {
+dpusm_compress(dpusm_compress_t alg, void *src, void *dst,
+    size_t s_len, int level, size_t *c_len) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
 
     dpusm_ph_t **provider = src_dpusmh->provider;
-    if (!FUNCS(provider)->compress ||              /* compression is optional */
+    if (!FUNCS(provider)->compress ||                  /* compression is optional */
         !((*provider)->capabilities.compress & alg)) { /* make sure algorithm is implemented */
         return DPUSM_NOT_IMPLEMENTED;
     }
@@ -499,7 +591,6 @@ dpusm_file_close(void *fp_handle) {
     return DPUSM_OK;
 }
 
-#ifdef _KERNEL
 static void *
 dpusm_disk_open(void *provider, const char *path, struct block_device *bdev) {
     CHECK_PROVIDER(provider, NULL);
@@ -585,49 +676,56 @@ dpusm_disk_close(void *disk) {
     dpusm_handle_free(disk_dpusmh);
     return DPUSM_OK;
 }
-#endif
 
 static const dpusm_uf_t user_functions = {
-    .get                = dpusm_get_provider,
-    .get_name           = dpusm_get_provider_name,
-    .put                = dpusm_put_provider,
-    .extract            = dpusm_extract_provider,
-    .capabilities       = dpusm_get_capabilities,
-    .alloc              = dpusm_alloc,
-    .alloc_ref          = dpusm_alloc_ref,
-    .get_size           = dpusm_get_size,
-    .free               = dpusm_free,
-    .copy_from_mem      = dpusm_copy_from_mem,
-    .copy_to_mem        = dpusm_copy_to_mem,
-    .mem_stats          = dpusm_provider_mem_stats,
-    .zero_fill          = dpusm_zero_fill,
-    .all_zeros          = dpusm_all_zeros,
-    .compress           = dpusm_compress,
-    .decompress         = dpusm_decompress,
-    .checksum           = dpusm_checksum,
-    .raid               = {
-                              .can_compute        = dpusm_raid_can_compute,
-                              .alloc              = dpusm_raid_alloc,
-                              .free               = dpusm_raid_free,
-                              .gen                = dpusm_raid_gen,
-                              .new_parity         = dpusm_raid_new_parity,
-                              .cmp                = dpusm_raid_cmp,
-                              .rec                = dpusm_raid_rec,
-                          },
-    .file               = {
-                              .open               = dpusm_file_open,
-                              .write              = dpusm_file_write,
-                              .close              = dpusm_file_close,
-                          },
-#ifdef _KERNEL
-    .disk               = {
-                              .open               = dpusm_disk_open,
-                              .invalidate         = dpusm_disk_invalidate,
-                              .write              = dpusm_disk_write,
-                              .flush              = dpusm_disk_flush,
-                              .close              = dpusm_disk_close,
-                          },
-#endif
+    .get           = dpusm_get_provider,
+    .get_name      = dpusm_get_provider_name,
+    .put           = dpusm_put_provider,
+    .extract       = dpusm_extract_provider,
+    .capabilities  = dpusm_get_capabilities,
+    .alloc         = dpusm_alloc,
+    .alloc_ref     = dpusm_alloc_ref,
+    .get_size      = dpusm_get_size,
+    .free          = dpusm_free,
+    .copy          = {
+                         .from = {
+                                     .generic     = dpusm_copy_from_generic,
+                                     .ptr         = dpusm_copy_from_ptr,
+                                     .scatterlist = dpusm_copy_from_scatterlist,
+                                 },
+                         .to   = {
+                                     .generic     = dpusm_copy_to_generic,
+                                     .ptr         = dpusm_copy_to_ptr,
+                                     .scatterlist = dpusm_copy_to_scatterlist,
+                                 },
+                     },
+    .mem_stats     = dpusm_provider_mem_stats,
+    .zero_fill     = dpusm_zero_fill,
+    .all_zeros     = dpusm_all_zeros,
+    .compress      = dpusm_compress,
+    .decompress    = dpusm_decompress,
+    .checksum      = dpusm_checksum,
+    .raid          = {
+                         .can_compute = dpusm_raid_can_compute,
+                         .alloc       = dpusm_raid_alloc,
+                         .free        = dpusm_raid_free,
+                         .gen         = dpusm_raid_gen,
+                         .new_parity  = dpusm_raid_new_parity,
+                         .cmp         = dpusm_raid_cmp,
+                         .rec         = dpusm_raid_rec,
+                     },
+    .file          = {
+                         .open        = dpusm_file_open,
+                         .write       = dpusm_file_write,
+                         .close       = dpusm_file_close,
+                     },
+    .disk          = {
+                         .open        = dpusm_disk_open,
+                         .invalidate  = dpusm_disk_invalidate,
+                         .write       = dpusm_disk_write,
+                         .flush       = dpusm_disk_flush,
+                         .close       = dpusm_disk_close,
+                     },
 };
 
 const dpusm_uf_t *

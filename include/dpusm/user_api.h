@@ -3,6 +3,15 @@
 
 #ifdef _KERNEL
 #include <linux/blkdev.h>
+#include <linux/scatterlist.h>
+#else
+/*
+ * forward declare structs to remove compiler errors due to undeclared
+ * types - functions will fail if these structs are not defined, so
+ * generally don't use outside of kernel
+ */
+struct block_device;
+struct scatterlist;
 #endif
 
 #include <dpusm/common.h>
@@ -45,11 +54,43 @@ typedef struct dpusm_user_functions {
     /* free a handle */
     void (*free)(void *handle);
 
-    /* memory -> provider */
-    int (*copy_from_mem)(dpusm_mv_t *mv, const void *buf, size_t size);
+    struct {
+        /* memory -> offloader */
+        struct {
+            /* required */
+            /* pass in an address that should not be directly accessed */
+            int (*generic)(dpusm_mv_t *mv, const void *buf, size_t size);
 
-    /* provider -> memory */
-    int (*copy_to_mem)(dpusm_mv_t *mv, void *buf, size_t size);
+            /* optional */
+            /* pass in an address that can be directly accessed (i.e. DMA) */
+            int (*ptr)(dpusm_mv_t *mv, const void *buf, size_t size);
+
+            /* optional */
+            /* only call in kernel */
+            int (*scatterlist)(dpusm_mv_t *mv,
+                struct scatterlist *sgl,
+                unsigned int nents,
+                size_t size);
+        } from;
+
+        /* offloader -> memory */
+        struct {
+            /* required */
+            /* pass in an address that should not be directly accessed */
+            int (*generic)(dpusm_mv_t *mv, void *buf, size_t size);
+
+            /* optional */
+            /* pass in an address that can be directly accessed (i.e. DMA) */
+            int (*ptr)(dpusm_mv_t *mv, void *buf, size_t size);
+
+            /* optional */
+            /* only call in kernel */
+            int (*scatterlist)(dpusm_mv_t *mv,
+                struct scatterlist *sgl,
+                unsigned int nents,
+                size_t size);
+        } to;
+    } copy;
 
     /*
      * optional
@@ -139,7 +180,6 @@ typedef struct dpusm_user_functions {
         int (*close)(void *fp_handle);
     } file;
 
-#ifdef _KERNEL
     struct {
         /* open should return NULL on error */
         void *(*open)(void *provider, const char *path, struct block_device *bdev);
@@ -153,7 +193,6 @@ typedef struct dpusm_user_functions {
             void *fc_args);
         int (*close)(void *disk_handle);
     } disk;
-#endif
 } dpusm_uf_t;
 
 /*

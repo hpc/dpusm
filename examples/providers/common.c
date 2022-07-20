@@ -9,8 +9,10 @@ typedef enum alloc_type {
 } alloc_type_t;
 
 typedef struct alloc {
+    void *ptr;         /* arbitrary offloader API handle */
+
+    /* other information that is used in the provider  */
     alloc_type_t type;
-    void *ptr;
     size_t size;
 } alloc_t;
 
@@ -93,7 +95,7 @@ dpusm_provider_free(void *handle) {
 }
 
 static int
-dpusm_provider_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
+dpusm_provider_copy_from_generic(dpusm_mv_t *mv, const void *buf, size_t size) {
     alloc_t *dst_handle = (alloc_t *) mv->handle;
     if (!dst_handle) {
         return DPUSM_ERROR;
@@ -106,7 +108,7 @@ dpusm_provider_copy_from_mem(dpusm_mv_t *mv, const void *buf, size_t size) {
 }
 
 static int
-dpusm_provider_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
+dpusm_provider_copy_to_generic(dpusm_mv_t *mv, void *buf, size_t size) {
     alloc_t *src_handle = (alloc_t *) mv->handle;
     if (!src_handle) {
         return DPUSM_ERROR;
@@ -119,38 +121,48 @@ dpusm_provider_copy_to_mem(dpusm_mv_t *mv, void *buf, size_t size) {
 }
 
 const dpusm_pf_t example_dpusm_provider_functions = {
-    .algorithms         = dpusm_provider_algorithms,
-    .alloc              = dpusm_provider_alloc,
-    .alloc_ref          = dpusm_provider_alloc_ref,
-    .get_size           = dpusm_provider_get_size,
-    .free               = dpusm_provider_free,
-    .copy_from_mem      = dpusm_provider_copy_from_mem,
-    .copy_to_mem        = dpusm_provider_copy_to_mem,
-    .mem_stats          = NULL,
-    .zero_fill          = NULL,
-    .all_zeros          = NULL,
-    .compress           = NULL,
-    .decompress         = NULL,
-    .checksum           = NULL,
-    .raid               = {
-                              .alloc       = NULL,
-                              .free        = NULL,
-                              .gen         = NULL,
-                              .new_parity  = NULL,
-                              .cmp         = NULL,
-                              .rec         = NULL,
-                          },
-    .file               = {
-                              .open        = NULL,
-                              .write       = NULL,
-                              .close       = NULL,
+    .algorithms                = dpusm_provider_algorithms,
+    .alloc                     = dpusm_provider_alloc,
+    .alloc_ref                 = dpusm_provider_alloc_ref,
+    .get_size                  = dpusm_provider_get_size,
+    .free                      = dpusm_provider_free,
+    .copy                      = {
+                                     .from = {
+                                                 .generic     = dpusm_provider_copy_from_generic,
+                                                 .ptr         = NULL,
+                                                 .scatterlist = NULL,
+                                             },
+                                     .to =   {
+                                                 .generic     = dpusm_provider_copy_to_generic,
+                                                 .ptr         = NULL,
+                                                 .scatterlist = NULL,
+                                             },
+                                 },
+    .mem_stats                 = NULL,
+    .zero_fill                 = NULL,
+    .all_zeros                 = NULL,
+    .compress                  = NULL,
+    .decompress                = NULL,
+    .checksum                  = NULL,
+    .raid                      = {
+                                     .alloc       = NULL,
+                                     .free        = NULL,
+                                     .gen         = NULL,
+                                     .new_parity  = NULL,
+                                     .cmp         = NULL,
+                                     .rec         = NULL,
+                                 },
+    .file                      = {
+                                     .open        = NULL,
+                                     .write       = NULL,
+                                     .close       = NULL,
 
-                          },
-    .disk               = {
-                              .open        = NULL,
-                              .invalidate  = NULL,
-                              .write       = NULL,
-                              .flush       = NULL,
-                              .close       = NULL,
-                          },
+                                 },
+    .disk                      = {
+                                     .open        = NULL,
+                                     .invalidate  = NULL,
+                                     .write       = NULL,
+                                     .flush       = NULL,
+                                     .close       = NULL,
+                                 },
 };
