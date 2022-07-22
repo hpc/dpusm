@@ -5,14 +5,13 @@
 
 #define DPUSM_OK                    0
 #define DPUSM_ERROR                 1
-#define DPUSM_PROVIDER_EXISTS       2
-#define DPUSM_PROVIDER_NOT_EXISTS   3
-#define DPUSM_PROVIDER_UNREGISTERED 4
-#define DPUSM_PROVIDER_INVALIDATED  5
-#define DPUSM_PROVIDER_MISMATCH     6
-#define DPUSM_NOT_IMPLEMENTED       7 /* function is not implemented */
-#define DPUSM_NOT_SUPPORTED         8 /* function is implemented, but specific operation is not supported */
-#define DPUSM_BAD_RESULT            9 /* function ran and returned an error */
+#define DPUSM_PROVIDER_NOT_EXISTS   2
+#define DPUSM_PROVIDER_UNREGISTERED 3
+#define DPUSM_PROVIDER_INVALIDATED  4
+#define DPUSM_PROVIDER_MISMATCH     5
+#define DPUSM_NOT_IMPLEMENTED       6 /* function is not implemented */
+#define DPUSM_NOT_SUPPORTED         7 /* function is implemented, but specific operation is not supported */
+#define DPUSM_BAD_RESULT            8 /* function ran and returned an error */
 
 /* 0 should be considered invalid/not available when using these values */
 
