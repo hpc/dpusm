@@ -5,10 +5,10 @@
 
 #define DPUSM_OK                    0
 #define DPUSM_ERROR                 1
-#define DPUSM_PROVIDER_NOT_EXISTS   2
-#define DPUSM_PROVIDER_UNREGISTERED 3
-#define DPUSM_PROVIDER_INVALIDATED  4
-#define DPUSM_PROVIDER_MISMATCH     5
+#define DPUSM_PROVIDER_NOT_EXISTS   2 /* provider reference does not point to anything */
+#define DPUSM_PROVIDER_UNREGISTERED 3 /* provider existed at one point, but reference is no longer valid */
+#define DPUSM_PROVIDER_INVALIDATED  4 /* provider is still registered, but has been invalidated */
+#define DPUSM_PROVIDER_MISMATCH     5 /* offloaded data is not located on the provider running the function */
 #define DPUSM_NOT_IMPLEMENTED       6 /* function is not implemented */
 #define DPUSM_NOT_SUPPORTED         7 /* function is implemented, but specific operation is not supported */
 #define DPUSM_BAD_RESULT            8 /* function ran and returned an error */
