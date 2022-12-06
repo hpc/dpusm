@@ -166,17 +166,19 @@ dpusm_get_size(void *handle, size_t *size, size_t *actual) {
     return FUNCS(dpusmh->provider)->get_size(dpusmh->handle, size, actual);
 }
 
-static void
+static int
 dpusm_free(void *handle) {
     if (!handle) {
-        return;
+        return DPUSM_ERROR;
     }
 
     dpusm_handle_t *dpusmh = (dpusm_handle_t *) handle;
+    int rc = DPUSM_OK;
     if (dpusm_provider_sane(dpusmh->provider) == DPUSM_OK) {
-        FUNCS(dpusmh->provider)->free(dpusmh->handle);
+        rc = FUNCS(dpusmh->provider)->free(dpusmh->handle);
     }
     dpusm_handle_free(dpusmh);
+    return rc;
 }
 
 static int
@@ -276,6 +278,20 @@ dpusm_copy_from_scatterlist(dpusm_mv_t *mv,
         .handle = dpusmh->handle,
         .offset = mv->offset,
     };
+
+    /* /\* make sure sizes are set *\/ */
+    /* size_t actual = 0; */
+    /* for(int i = 0; i < nents; i++) { */
+    /*     if ((sgl[i].length == 0) || (sgl[i].length > size)) { */
+    /*         return DPUSM_ERROR; */
+    /*     } */
+
+    /*     actual += sgl[i].length; */
+    /* } */
+
+    /* if (actual > size) { */
+    /*     return DPUSM_ERROR; */
+    /* } */
 
     return FUNCS(provider)->copy.from.scatterlist(&actual_mv,
         sgl, nents, size);

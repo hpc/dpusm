@@ -76,7 +76,7 @@ dpusm_provider_get_size(void *handle, size_t *size, size_t *actual) {
     return DPUSM_ERROR;
 }
 
-static void
+static int
 dpusm_provider_free(void *handle) {
     alloc_t *alloc = (alloc_t *) handle;
     if (alloc) {
@@ -92,6 +92,8 @@ dpusm_provider_free(void *handle) {
 
         kfree(alloc);
     }
+
+    return DPUSM_OK;
 }
 
 static int

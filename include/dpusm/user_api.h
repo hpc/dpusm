@@ -52,7 +52,7 @@ typedef struct dpusm_user_functions {
     int (*get_size)(void *handle, size_t *size, size_t *actual);
 
     /* free a handle */
-    void (*free)(void *handle);
+    int (*free)(void *handle);
 
     struct {
         /* memory -> offloader */

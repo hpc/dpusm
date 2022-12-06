@@ -39,7 +39,7 @@ typedef struct dpusm_provider_functions {
     int (*get_size)(void *handle, size_t *size, size_t *actual);
 
     /* free an offloader handle */
-    void (*free)(void *handle);
+    int (*free)(void *handle);
 
     struct {
         /* memory -> offloader */
