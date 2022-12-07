@@ -113,7 +113,6 @@ dpusm_get_provider(const char *name) {
         return NULL;
     }
 
-    printk("Provider with name \"%s\" found. %p\n", name, provider);
     return provider;
 }
 
