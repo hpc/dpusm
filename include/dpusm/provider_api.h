@@ -118,17 +118,13 @@ typedef struct dpusm_provider_functions {
         int (*can_compute)(size_t nparity, size_t ndata,
             size_t *col_sizes, int rec);
 
-        /*
-         * col_handles should contain both parity columns as well as
-         * data columns. The order will depend on the user. col_sizes
-         * should be the amount of data from each column that is used
-         * to calculate parity bits, which may be smaller than the
-         * allocated size.
-         */
-        void *(*alloc)(size_t nparity, size_t ndata,
-            void **col_handles, size_t *col_sizes);
+        /* set up an empty RAID structure */
+        void *(*alloc)(size_t nparity, size_t ndata);
 
-        void (*free)(void *raid);
+        /* fill in single column of RAID structure */
+        int (*set_column)(void *raid, uint64_t c, void *col, size_t size);
+
+        int (*free)(void *raid);
 
         /* Erasure Code Generation */
         int (*gen)(void *raid);

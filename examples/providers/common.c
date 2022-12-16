@@ -148,6 +148,7 @@ const dpusm_pf_t example_dpusm_provider_functions = {
     .checksum                  = NULL,
     .raid                      = {
                                      .alloc       = NULL,
+                                     .set_column  = NULL,
                                      .free        = NULL,
                                      .gen         = NULL,
                                      .new_parity  = NULL,

@@ -402,74 +402,51 @@ static int dpusm_raid_can_compute(void *provider, size_t nparity, size_t ndata,
     return FUNCS(provider)->raid.can_compute(nparity, ndata, col_sizes, rec);
 }
 
-static void
+static int
 dpusm_raid_free(void *raid) {
-    if (!raid) {
-        return;
-    }
-
-    dpusm_handle_t *raid_dpusmh = (dpusm_handle_t *) raid;
-    if (dpusm_provider_sane(raid_dpusmh->provider) != DPUSM_OK) {
-        return;
-    }
+    CHECK_HANDLE(raid, raid_dpusmh, DPUSM_ERROR);
 
     /* raid is optional */
     if (!FUNCS(raid_dpusmh->provider)->raid.free) {
-        return;
+        return DPUSM_NOT_IMPLEMENTED;
     }
 
     /* raid_dpusmh->handle should not be NULL if this has been reached */
-    FUNCS(raid_dpusmh->provider)->raid.free(raid_dpusmh->handle);
+    const int rc = FUNCS(raid_dpusmh->provider)->raid.free(raid_dpusmh->handle);
     dpusm_handle_free(raid_dpusmh);
+    return rc;
 }
 
 static void *
-dpusm_raid_alloc(size_t nparity, size_t ndata, void *src,
-    void **col_handles, size_t *col_sizes) {
-    CHECK_HANDLE(src, src_dpusmh, NULL);
-    dpusm_ph_t **provider = src_dpusmh->provider;
+dpusm_raid_alloc(void *provider, size_t nparity, size_t ndata) {
+    CHECK_PROVIDER(provider, NULL);
 
-    if (!FUNCS(provider)->raid.alloc ||                          /* raid is optional */
-        (!((*provider)->capabilities.raid & (1 << nparity)))) {  /* at minumum, raid N generation is required */
+    if (!FUNCS(provider)->raid.alloc ||                                           /* raid is optional */
+        (!((* (dpusm_ph_t **) provider)->capabilities.raid & (1 << nparity)))) {  /* at minumum, raid N generation is required */
         return NULL;
     }
 
-    const size_t ncols = nparity + ndata;
+    void *raid_ctx = FUNCS(provider)->raid.alloc(nparity, ndata);
+    return (dpusm_handle_construct(provider, raid_ctx));
+}
 
-    dpusm_handle_t *raid_dpusmh = NULL;
+static int
+dpusm_raid_set_column(void *raid, uint64_t c, void *col, size_t size) {
+    CHECK_HANDLE(raid, raid_dpusmh, DPUSM_ERROR);
+    dpusm_ph_t **raid_provider = raid_dpusmh->provider;
 
-    /* extract provider handles out of the dpusm handles */
-    const size_t provider_handles_size = sizeof(void *) * ncols;
-    void **provider_handles = dpusm_mem_alloc(provider_handles_size);
-    for(uint64_t c = 0; c < ncols; c++) {
-        dpusm_handle_t *col_handle = (dpusm_handle_t *) col_handles[c];
-        if (!col_handle) {
-            goto cleanup;
-        }
-
-        /* make sure the columns are on the same provider as src */
-        if (provider != col_handle->provider) {
-            goto cleanup;
-        }
-
-        provider_handles[c] = col_handle->handle;
+    /* raid is optional */
+    if (!FUNCS(raid_provider)->raid.set_column) {
+        return DPUSM_NOT_IMPLEMENTED;
     }
 
-    /* src is not passed in since it has already been checked */
-    void *raid_ctx = FUNCS(provider)->raid.alloc(nparity, ndata,
-        provider_handles, col_sizes);
-
-    raid_dpusmh = dpusm_handle_construct(provider, raid_ctx);
-
-    if (!raid_dpusmh) {
-        if (raid_ctx) {
-             FUNCS(provider)->raid.free(raid_ctx);
-        }
+    CHECK_HANDLE(col, col_dpusmh, DPUSM_ERROR);
+    if (raid_provider != col_dpusmh->provider) {
+        return (DPUSM_PROVIDER_MISMATCH);
     }
 
-  cleanup:
-    dpusm_mem_free(provider_handles, provider_handles_size);
-    return raid_dpusmh;
+    return FUNCS(raid_provider)->raid.set_column(raid_dpusmh->handle,
+        c, col_dpusmh->handle, size);
 }
 
 static int
@@ -723,6 +700,7 @@ static const dpusm_uf_t user_functions = {
     .raid          = {
                          .can_compute = dpusm_raid_can_compute,
                          .alloc       = dpusm_raid_alloc,
+                         .set_column  = dpusm_raid_set_column,
                          .free        = dpusm_raid_free,
                          .gen         = dpusm_raid_gen,
                          .new_parity  = dpusm_raid_new_parity,

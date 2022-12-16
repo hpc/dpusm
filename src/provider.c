@@ -43,6 +43,7 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
     const int raid_gen = (
         !!funcs->raid.can_compute +
         !!funcs->raid.alloc +
+        !!funcs->raid.set_column +
         !!funcs->raid.free +
         !!funcs->raid.gen);
 
@@ -66,8 +67,8 @@ dpusm_provider_sane_at_load(const dpusm_pf_t *funcs)
     // get bitmap of bad function groups
     const int rc = (
         (!(required == 7)?DPUSM_PROVIDER_BAD_GROUP_REQUIRED:0) |
-        (!((raid_gen == 0) || (raid_gen == 4))?DPUSM_PROVIDER_BAD_GROUP_RAID_GEN:0) |
-        (!((raid_rec == 0) || ((raid_gen == 4) && (raid_rec == 3)))?DPUSM_PROVIDER_BAD_GROUP_RAID_REC:0) |
+        (!((raid_gen == 0) || (raid_gen == 5))?DPUSM_PROVIDER_BAD_GROUP_RAID_GEN:0) |
+        (!((raid_rec == 0) || ((raid_gen == 5) && (raid_rec == 3)))?DPUSM_PROVIDER_BAD_GROUP_RAID_REC:0) |
         (!((file == 0) || (file == 3))?DPUSM_PROVIDER_BAD_GROUP_FILE:0) |
         (!((disk == 0) || (disk == 5))?DPUSM_PROVIDER_BAD_GROUP_DISK:0)
     );
