@@ -129,10 +129,6 @@ typedef struct dpusm_provider_functions {
         /* Erasure Code Generation */
         int (*gen)(void *raid);
 
-        /* create new allocations for the parity columns */
-        int (*new_parity)(void *raid, uint64_t raidn,
-            void **new_parity_cols, size_t *new_parity_sizes);
-
         /*
          * compare the contents of 2 handles
          *

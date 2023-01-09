@@ -146,14 +146,6 @@ typedef struct dpusm_user_functions {
         int (*gen)(void *raid);
 
         /*
-         * create new allocations for the parity columns
-         *
-         * columns whose new_parity_sizes[c] == 0 will not be allocated
-         */
-        int (*new_parity)(void *raid, uint64_t raidn,
-            void ***new_parity_cols, size_t *new_parity_sizes);
-
-        /*
          * compare the contents of 2 handles
          *
          * This really should not be tied to raid, but is

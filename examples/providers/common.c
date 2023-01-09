@@ -151,7 +151,6 @@ const dpusm_pf_t example_dpusm_provider_functions = {
                                      .set_column  = NULL,
                                      .free        = NULL,
                                      .gen         = NULL,
-                                     .new_parity  = NULL,
                                      .cmp         = NULL,
                                      .rec         = NULL,
                                  },

@@ -464,46 +464,6 @@ dpusm_raid_gen(void *raid) {
 }
 
 static int
-dpusm_raid_new_parity(void *raid, uint64_t raidn,
-    void ***new_parity_cols, size_t *new_parity_sizes) {
-    CHECK_HANDLE(raid, dpusmh, DPUSM_ERROR);
-    dpusm_ph_t **provider = dpusmh->provider;
-
-    /* raid is optional */
-    if (!FUNCS(provider)->raid.new_parity ||
-        !((*provider)->capabilities.raid & DPUSM_RAID_REC)) {
-        return DPUSM_NOT_IMPLEMENTED;
-    }
-
-    /* array of pointers for provider to fill in */
-    const size_t new_provider_parity_col_size = sizeof(void *) * raidn;
-    void **new_provider_parity_cols = dpusm_mem_alloc(new_provider_parity_col_size);
-    const int rc = FUNCS(provider)->raid.new_parity(dpusmh->handle, raidn,
-        new_provider_parity_cols, new_parity_sizes);
-
-    if (rc == DPUSM_OK) {
-        /* wrap provider handles in DPUSM handles and send to user */
-        for(uint64_t c = 0; c < raidn; c++) {
-            if (new_parity_cols[c]) {
-                *(new_parity_cols[c]) =
-                    dpusm_handle_construct(provider, new_provider_parity_cols[c]);
-            }
-        }
-    }
-    else {
-        for(uint64_t c = 0; c < raidn; c++) {
-            FUNCS(provider)->free(new_provider_parity_cols[c]);
-            if (new_parity_cols[c]) {
-                *(new_parity_cols[c]) = NULL;
-            }
-        }
-    }
-
-    dpusm_mem_free(new_provider_parity_cols, new_provider_parity_col_size);
-    return rc;
-}
-
-static int
 dpusm_raid_cmp(void *lhs_handle, void *rhs_handle, int *diff) {
     if (!diff) {
         return DPUSM_ERROR;
@@ -703,7 +663,6 @@ static const dpusm_uf_t user_functions = {
                          .set_column  = dpusm_raid_set_column,
                          .free        = dpusm_raid_free,
                          .gen         = dpusm_raid_gen,
-                         .new_parity  = dpusm_raid_new_parity,
                          .cmp         = dpusm_raid_cmp,
                          .rec         = dpusm_raid_rec,
                      },
