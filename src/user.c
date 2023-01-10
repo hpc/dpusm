@@ -518,11 +518,11 @@ dpusm_file_open(void *provider, const char *path, int flags, int mode) {
 static int
 dpusm_file_write(void *fp_handle, void *data, size_t count,
     size_t trailing_zeros, loff_t offset, ssize_t *resid, int *err) {
-    SAME_PROVIDERS(fp_handle, fp_dpusmh, data, dpusmh, DPUSM_ERROR);
+    SAME_PROVIDERS(fp_handle, fp_dpusmh, data, dpusmh, EIO);
 
     /* file operations are optional */
     if (!FUNCS(fp_dpusmh->provider)->file.write) {
-        return DPUSM_NOT_IMPLEMENTED;
+        return ENOSYS;
     }
 
     return FUNCS(fp_dpusmh->provider)->file.write(fp_dpusmh->handle,
@@ -583,14 +583,14 @@ dpusm_disk_write(void *disk, void *data, size_t data_size,
     size_t trailing_zeros, uint64_t io_offset, int flags,
     dpusm_dwc_t write_completion, void *wc_args) {
     if (!write_completion) {
-        return DPUSM_ERROR;
+        return EIO;
     }
 
-    SAME_PROVIDERS(disk, disk_dpusmh, data, dpusmh, DPUSM_ERROR);
+    SAME_PROVIDERS(disk, disk_dpusmh, data, dpusmh, EXDEV);
 
     /* disk operations are optional */
     if (!FUNCS(disk_dpusmh->provider)->disk.write) {
-        return DPUSM_NOT_IMPLEMENTED;
+        return ENOSYS;
     }
 
     return FUNCS(disk_dpusmh->provider)->disk.write(disk_dpusmh->handle,
@@ -601,14 +601,14 @@ dpusm_disk_write(void *disk, void *data, size_t data_size,
 static int
 dpusm_disk_flush(void *disk, dpusm_dfc_t flush_completion, void *fc_args) {
     if (!flush_completion) {
-        return DPUSM_ERROR;
+        return EIO;
     }
 
-    CHECK_HANDLE(disk, disk_dpusmh, DPUSM_ERROR);
+    CHECK_HANDLE(disk, disk_dpusmh, EIO);
 
     /* disk operations are optional */
     if (!FUNCS(disk_dpusmh->provider)->disk.flush) {
-        return DPUSM_NOT_IMPLEMENTED;
+        return ENOSYS;
     }
 
     return FUNCS(disk_dpusmh->provider)->disk.flush(disk_dpusmh->handle,
