@@ -107,7 +107,7 @@ typedef struct dpusm_provider_functions {
         size_t *c_len);
 
     int (*decompress)(dpusm_decompress_t alg,
-        void *src, void *dst, int level);
+        void *src, void *dst, int *level);
 
     int (*checksum)(dpusm_checksum_t alg,
         dpusm_checksum_byteorder_t order,

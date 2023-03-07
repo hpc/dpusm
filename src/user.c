@@ -367,7 +367,7 @@ dpusm_compress(dpusm_compress_t alg, void *src, void *dst,
 
 static int
 dpusm_decompress(dpusm_decompress_t alg,
-    void *src, void *dst, int level) {
+    void *src, void *dst, int *level) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
 
     dpusm_ph_t **provider = src_dpusmh->provider;
