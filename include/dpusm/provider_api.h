@@ -101,13 +101,13 @@ typedef struct dpusm_provider_functions {
     /* whether or not a buffer is all zeros */
     int (*all_zeros)(void *handle, size_t offset, size_t size);
 
-    int (*compress)(dpusm_compress_t alg,
-        void *src, void *dst,
-        size_t s_len, int level,
-        size_t *c_len);
+    /* pass in usable space in dst, get back compressed length */
+    int (*compress)(dpusm_compress_t alg, int level,
+        void *src, size_t s_len, void *dst, size_t *d_len);
 
-    int (*decompress)(dpusm_decompress_t alg,
-        void *src, void *dst, int *level);
+    /* pass in usable space in dst, get back decompressed length */
+    int (*decompress)(dpusm_decompress_t alg, int *level,
+        void *src, size_t s_len, void *dst, size_t *d_len);
 
     int (*checksum)(dpusm_checksum_t alg,
         dpusm_checksum_byteorder_t order,

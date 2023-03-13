@@ -351,8 +351,8 @@ dpusm_all_zeros(void *handle, size_t offset, size_t size) {
 }
 
 static int
-dpusm_compress(dpusm_compress_t alg, void *src, void *dst,
-    size_t s_len, int level, size_t *c_len) {
+dpusm_compress(dpusm_compress_t alg, int level,
+    void *src, size_t s_len, void *dst, size_t *d_len) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
 
     dpusm_ph_t **provider = src_dpusmh->provider;
@@ -361,13 +361,13 @@ dpusm_compress(dpusm_compress_t alg, void *src, void *dst,
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(provider)->compress(alg, src_dpusmh->handle,
-        dst_dpusmh->handle, s_len, level, c_len);
+    return FUNCS(provider)->compress(alg, level,
+        src_dpusmh->handle, s_len, dst_dpusmh->handle, d_len);
 }
 
 static int
-dpusm_decompress(dpusm_decompress_t alg,
-    void *src, void *dst, int *level) {
+dpusm_decompress(dpusm_decompress_t alg, int *level,
+    void *src, size_t s_len, void *dst, size_t *d_len) {
     SAME_PROVIDERS(dst, dst_dpusmh, src, src_dpusmh, DPUSM_ERROR);
 
     dpusm_ph_t **provider = src_dpusmh->provider;
@@ -376,8 +376,8 @@ dpusm_decompress(dpusm_decompress_t alg,
         return DPUSM_NOT_IMPLEMENTED;
     }
 
-    return FUNCS(provider)->decompress(alg, src_dpusmh->handle,
-        dst_dpusmh->handle, level);
+    return FUNCS(provider)->decompress(alg, level,
+        src_dpusmh->handle, s_len, dst_dpusmh->handle, d_len);
 }
 
 static int
