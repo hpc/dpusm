@@ -8,20 +8,44 @@
 extern void *dpusm_get(const char *name);
 extern int dpusm_put(void *handle);
 
+#ifdef DEBUG
+typedef enum dpusm_handle_type {
+    DPUSM_HANDLE_REAL,
+    DPUSM_HANDLE_REF,
+    DPUSM_HANDLE_RAID,
+    DPUSM_HANDLE_FILE,
+    DPUSM_HANDLE_DISK,
+
+    DPUSM_HANDLE_MAX,
+} dpusm_handle_type_t;
+#endif
+
 /* struct returned by alloc functions */
 typedef struct dpusm_handle {
     dpusm_ph_t **provider; /* where this allocation came from */
     void *handle;          /* opaque handle to the allocation */
+#ifdef DEBUG
+    dpusm_handle_type_t type;
+    size_t size;
+#endif
 } dpusm_handle_t;
 
 static dpusm_handle_t *
-dpusm_handle_construct(void *provider, void *handle) {
+dpusm_handle_construct(void *provider, void *handle
+#ifdef DEBUG
+    , dpusm_handle_type_t type, size_t size
+#endif
+    ) {
     dpusm_handle_t *dpusmh = NULL;
     if (provider && handle) {
         dpusmh = dpusm_mem_alloc(sizeof(dpusm_handle_t));
         if (dpusmh) {
             dpusmh->provider = provider;
             dpusmh->handle = handle;
+#ifdef DEBUG
+            dpusmh->type = type;
+            dpusmh->size = size;
+#endif
         }
     }
     return dpusmh;
@@ -148,7 +172,11 @@ static void *
 dpusm_alloc(void *provider, size_t size) {
     CHECK_PROVIDER(provider, NULL);
     return dpusm_handle_construct(provider,
-        FUNCS(provider)->alloc(size));
+        FUNCS(provider)->alloc(size)
+#ifdef DEBUG
+        , DPUSM_HANDLE_REAL, size
+#endif
+        );
 }
 
 static void *
@@ -156,7 +184,11 @@ dpusm_alloc_ref(void *src, size_t offset, size_t size) {
     CHECK_HANDLE(src, dpusmh, NULL);
     return dpusm_handle_construct(dpusmh->provider,
         FUNCS(dpusmh->provider)->alloc_ref(dpusmh->handle,
-        offset, size));
+        offset, size)
+#ifdef DEBUG
+        , DPUSM_HANDLE_REF, size
+#endif
+        );
 }
 
 static int
@@ -427,7 +459,11 @@ dpusm_raid_alloc(void *provider, size_t nparity, size_t ndata) {
     }
 
     void *raid_ctx = FUNCS(provider)->raid.alloc(nparity, ndata);
-    return (dpusm_handle_construct(provider, raid_ctx));
+    return dpusm_handle_construct(provider, raid_ctx
+#ifdef DEBUG
+        , DPUSM_HANDLE_RAID, 0
+#endif
+        );
 }
 
 static int
@@ -512,7 +548,11 @@ dpusm_file_open(void *provider, const char *path, int flags, int mode) {
     }
 
     return dpusm_handle_construct(provider,
-        FUNCS(provider)->file.open(path, flags, mode));
+        FUNCS(provider)->file.open(path, flags, mode)
+#ifdef DEBUG
+        , DPUSM_HANDLE_FILE, 0
+#endif
+        );
 }
 
 static int
@@ -563,7 +603,11 @@ dpusm_disk_open(void *provider, const char *path, struct block_device *bdev) {
     };
 
     return dpusm_handle_construct(provider,
-        FUNCS(provider)->disk.open(&data));
+        FUNCS(provider)->disk.open(&data)
+#ifdef DEBUG
+        , DPUSM_HANDLE_DISK, 0
+#endif
+        );
 }
 
 static int
