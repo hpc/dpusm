@@ -54,7 +54,11 @@ extern const char **DPUSM_DECOMPRESS_STR;
 typedef enum {
     DPUSM_CHECKSUM_FLETCHER_2 = 1 << 0,
     DPUSM_CHECKSUM_FLETCHER_4 = 1 << 1,
-    DPUSM_CHECKSUM_MAX        = 1 << 2,
+    DPUSM_CHECKSUM_SHA224     = 1 << 2,
+    DPUSM_CHECKSUM_SHA256     = 1 << 3,
+    DPUSM_CHECKSUM_SHA384     = 1 << 4,
+    DPUSM_CHECKSUM_SHA512     = 1 << 5,
+    DPUSM_CHECKSUM_MAX        = 1 << 6,
 } dpusm_checksum_t;
 
 extern const char *DPUSM_CHECKSUM_STR[];
