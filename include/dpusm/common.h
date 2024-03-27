@@ -41,8 +41,9 @@ typedef enum {
     DPUSM_COMPRESS_GZIP_8  = 1 << 7,
     DPUSM_COMPRESS_GZIP_9  = 1 << 8,
     DPUSM_COMPRESS_LZ4     = 1 << 9,
+    DPUSM_COMPRESS_ZSTD    = 1 << 10,
 
-    DPUSM_COMPRESS_MAX     = 1 << 10,
+    DPUSM_COMPRESS_MAX     = 1 << 11,
 } dpusm_compress_t;
 
 extern const char *DPUSM_COMPRESS_STR[];

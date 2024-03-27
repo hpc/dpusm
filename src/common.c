@@ -23,6 +23,7 @@ const char *DPUSM_COMPRESS_STR[] = {
     "GZIP Level 8",
     "GZIP Level 9",
     "LZ4",
+    "ZSTD",
 };
 
 const char **DPUSM_DECOMPRESS_STR = DPUSM_COMPRESS_STR;
