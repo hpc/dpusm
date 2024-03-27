@@ -73,6 +73,7 @@ dpusm_provider_sane(dpusm_ph_t **provider) {
 
     if (!*provider) {
         printk("Error: Unregistered provider: %p\n", provider);
+        dump_stack();
         return DPUSM_PROVIDER_UNREGISTERED;
     }
 
