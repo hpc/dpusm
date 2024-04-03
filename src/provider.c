@@ -354,6 +354,10 @@ dpusm_provider_get(dpusm_t *dpusm, const char *name) {
         atomic_inc(&dpusm->active);
         printk("%s: User has been given a handle to \"%s\" (%p) (now %d users).\n",
                __func__, (*provider)->name, *provider, atomic_read(&(*provider)->refs));
+
+        if ((*provider)->funcs->at_connect) {
+            (*provider)->funcs->at_connect();
+        }
     }
     else {
         printk("%s: Error: Did not find provider \"%s\"\n",
@@ -380,6 +384,13 @@ dpusm_provider_put(dpusm_t *dpusm, void *handle) {
 
     atomic_dec(&(*provider)->refs);
     atomic_dec(&dpusm->active);
+
+    if ((*provider)->funcs) { /* provider might have been invalidated */
+        if ((*provider)->funcs->at_disconnect) {
+            (*provider)->funcs->at_disconnect();
+        }
+    }
+
     printk("%s: User has returned a handle to \"%s\" (%p) (now %d users).\n",
            __func__, (*provider)->name, *provider, atomic_read(&(*provider)->refs));
     return DPUSM_OK;

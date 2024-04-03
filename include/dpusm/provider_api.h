@@ -82,6 +82,22 @@ typedef struct dpusm_provider_functions {
      */
 
     /*
+     * Run immediately after obtaining a handle
+     *     called by dpusm
+     *     no inputs, no outputs - side-effects only
+     *     not exposed to user
+     */
+    void (*at_connect)(void);
+
+    /*
+     * Run immediately before releasing a handle
+     *     called by dpusm
+     *     no inputs, no outputs - side-effects only
+     *     not exposed to user
+     */
+    void (*at_disconnect)(void);
+
+    /*
      * memory statistics
      * definition will depend on the provider, but in general:
      *

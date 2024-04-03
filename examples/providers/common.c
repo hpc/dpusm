@@ -140,6 +140,8 @@ const dpusm_pf_t example_dpusm_provider_functions = {
                                                  .scatterlist = NULL,
                                              },
                                  },
+    .at_connect                = NULL,
+    .at_disconnect             = NULL,
     .mem_stats                 = NULL,
     .zero_fill                 = NULL,
     .all_zeros                 = NULL,
