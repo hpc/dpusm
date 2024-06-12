@@ -13,20 +13,32 @@ const char *DPUSM_OPTIONAL_STR[] = {
 };
 
 const char *DPUSM_COMPRESS_STR[] = {
-    "GZIP Level 1",
-    "GZIP Level 2",
-    "GZIP Level 3",
-    "GZIP Level 4",
-    "GZIP Level 5",
-    "GZIP Level 6",
-    "GZIP Level 7",
-    "GZIP Level 8",
-    "GZIP Level 9",
-    "LZ4",
-    "ZSTD",
+    "GZIP Level 1 Compress",
+    "GZIP Level 2 Compress",
+    "GZIP Level 3 Compress",
+    "GZIP Level 4 Compress",
+    "GZIP Level 5 Compress",
+    "GZIP Level 6 Compress",
+    "GZIP Level 7 Compress",
+    "GZIP Level 8 Compress",
+    "GZIP Level 9 Compress",
+    "LZ4 Compress",
+    "ZSTD Compress",
 };
 
-const char **DPUSM_DECOMPRESS_STR = DPUSM_COMPRESS_STR;
+const char *DPUSM_DECOMPRESS_STR[] = {
+    "GZIP Level 1 Decompress",
+    "GZIP Level 2 Decompress",
+    "GZIP Level 3 Decompress",
+    "GZIP Level 4 Decompress",
+    "GZIP Level 5 Decompress",
+    "GZIP Level 6 Decompress",
+    "GZIP Level 7 Decompress",
+    "GZIP Level 8 Decompress",
+    "GZIP Level 9 Decompress",
+    "LZ4 Decompress",
+    "ZSTD Decompress",
+};
 
 const char *DPUSM_CHECKSUM_STR[] = {
     "Fletcher 2",

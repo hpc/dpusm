@@ -50,7 +50,7 @@ extern const char *DPUSM_COMPRESS_STR[];
 
 typedef dpusm_compress_t dpusm_decompress_t;
 
-extern const char **DPUSM_DECOMPRESS_STR;
+extern const char *DPUSM_DECOMPRESS_STR[];
 
 typedef enum {
     DPUSM_CHECKSUM_FLETCHER_2 = 1 << 0,
