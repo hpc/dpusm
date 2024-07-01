@@ -266,19 +266,19 @@ dpusm_provider_register(dpusm_t *dpusm, struct module *module, const dpusm_pf_t 
         return -EINVAL;
     }
 
-    mutex_lock(&dpusm->lock);;
+    while (mutex_lock_interruptible(&dpusm->lock));
 
     dpusm_ph_t **found = find_provider(dpusm, module_name(module));
     if (found) {
         printk("%s: DPUSM Provider with the name \"%s\" (%p) already exists. %zu providers registered.\n",
                __func__, module_name(module), *found, dpusm->count);
-        mutex_unlock(&dpusm->lock);;
+        mutex_unlock(&dpusm->lock);
         return -EEXIST;
     }
 
     dpusm_ph_t *provider = dpusmph_init(module, funcs);
     if (!provider) {
-        mutex_unlock(&dpusm->lock);;
+        mutex_unlock(&dpusm->lock);
         return -ECANCELED;
     }
 
@@ -287,7 +287,7 @@ dpusm_provider_register(dpusm_t *dpusm, struct module *module, const dpusm_pf_t 
     printk("%s: DPUSM Provider \"%s\" (%p) added. Now %zu providers registered.\n",
            __func__, module_name(module), provider, dpusm->count);
 
-    mutex_unlock(&dpusm->lock);;
+    mutex_unlock(&dpusm->lock);
 
     return 0;
 }
@@ -321,12 +321,12 @@ dpusm_provider_unregister_handle(dpusm_t *dpusm, dpusm_ph_t **provider) {
 
 int
 dpusm_provider_unregister(dpusm_t *dpusm, struct module *module) {
-    mutex_lock(&dpusm->lock);;
+    while (mutex_lock_interruptible(&dpusm->lock));
 
     dpusm_ph_t **provider = find_provider(dpusm, module_name(module));
     if (!provider) {
         printk("%s: Could not find provider with name \"%s\"\n", __func__, module_name(module));
-        mutex_unlock(&dpusm->lock);;
+        mutex_unlock(&dpusm->lock);
         return DPUSM_ERROR;
     }
 
@@ -334,7 +334,7 @@ dpusm_provider_unregister(dpusm_t *dpusm, struct module *module) {
     const int rc = dpusm_provider_unregister_handle(dpusm, provider);
     printk("%s: Unregistered \"%s\" (%p): %d\n", __func__, module_name(module), addr, rc);
 
-    mutex_unlock(&dpusm->lock);;
+    mutex_unlock(&dpusm->lock);
     return rc;
 }
 
@@ -346,7 +346,7 @@ dpusm_provider_unregister(dpusm_t *dpusm, struct module *module) {
 /* get a provider by name */
 dpusm_ph_t **
 dpusm_provider_get(dpusm_t *dpusm, const char *name) {
-    mutex_lock(&dpusm->lock);
+    while (mutex_lock_interruptible(&dpusm->lock));
     dpusm_ph_t **provider = find_provider(dpusm, name);
     if (provider) {
         /* make sure provider can't be unloaded before user */
@@ -406,7 +406,7 @@ dpusm_provider_put(dpusm_t *dpusm, void *handle) {
 }
 
 void dpusm_provider_invalidate(dpusm_t *dpusm, const char *name) {
-    mutex_lock(&dpusm->lock);;
+    while (mutex_lock_interruptible(&dpusm->lock));
     dpusm_ph_t **provider = find_provider(dpusm, name);
     if (provider && *provider) {
         (*provider)->funcs = NULL;
@@ -419,5 +419,5 @@ void dpusm_provider_invalidate(dpusm_t *dpusm, const char *name) {
         printk("%s: Error: Did not find provider \"%s\"\n",
                __func__, name);
     }
-    mutex_unlock(&dpusm->lock);;
+    mutex_unlock(&dpusm->lock);
 }

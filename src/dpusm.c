@@ -77,7 +77,7 @@ dpusm_init(void) {
 
 static void __exit
 dpusm_exit(void) {
-    mutex_lock(&dpusm.lock);
+    while (mutex_lock_interruptible(&dpusm.lock));
 
     const int active = atomic_read(&dpusm.active);
     if (unlikely(active)) {
