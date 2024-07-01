@@ -4,7 +4,7 @@
 #include <linux/atomic.h>
 #include <linux/list.h>
 #include <linux/module.h>
-#include <linux/spinlock.h>
+#include <linux/mutex.h>
 
 #include <dpusm/provider_api.h>
 
@@ -21,7 +21,7 @@ typedef struct dpusm_provider_handle {
 typedef struct {
     struct list_head providers;  /* list of providers */
     size_t count;                /* count of registered providers */
-    rwlock_t lock;
+    struct mutex lock;
     atomic_t active;             /* how many providers are active (may be larger than count) */
                                  /* this is not tied to the provider/count */
 } dpusm_t;
@@ -34,9 +34,6 @@ int dpusm_provider_unregister(dpusm_t *dpusm, struct module *module);
 
 dpusm_ph_t **dpusm_provider_get(dpusm_t *dpusm, const char *name);
 int dpusm_provider_put(dpusm_t *dpusm, void *handle);
-
-void dpusm_provider_write_lock(dpusm_t *dpusm);
-void dpusm_provider_write_unlock(dpusm_t *dpusm);
 
 /*
  * call when backing DPU goes down unexpectedly

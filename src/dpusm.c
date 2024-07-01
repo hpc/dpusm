@@ -66,7 +66,7 @@ static int __init
 dpusm_init(void) {
     INIT_LIST_HEAD(&dpusm.providers);
     dpusm.count = 0;
-    rwlock_init(&dpusm.lock);
+    mutex_init(&dpusm.lock);
 
     atomic_set(&dpusm.active, 0);
     dpusm_mem_init();
@@ -77,7 +77,7 @@ dpusm_init(void) {
 
 static void __exit
 dpusm_exit(void) {
-    dpusm_provider_write_lock(&dpusm);
+    mutex_lock(&dpusm.lock);
 
     const int active = atomic_read(&dpusm.active);
     if (unlikely(active)) {
@@ -100,7 +100,7 @@ dpusm_exit(void) {
         dpusm_provider_unregister_handle(&dpusm, &provider->self);
     }
 
-    dpusm_provider_write_unlock(&dpusm);
+    mutex_unlock(&dpusm.lock);
 
 #if DPUSM_TRACK_ALLOCS
     size_t alloc_count = 0;
