@@ -227,7 +227,6 @@ dpusmph_init(struct module *module, const dpusm_pf_t *funcs)
         dpusmph->module = module;
         dpusmph->funcs = funcs;
         dpusmph->self = dpusmph;
-        atomic_set(&dpusmph->refs, 0);
     }
 
     return dpusmph;
@@ -301,8 +300,10 @@ dpusm_provider_unregister_handle(dpusm_t *dpusm, dpusm_ph_t **provider) {
     }
 
     int rc = 0;
-    const int refs = atomic_read(&(*provider)->refs);
-    if (refs) {
+
+    /* have to add 1 because module_exit subtracts 1 before entering provider exit */
+    const int refs = module_refcount((*provider)->module) + 1;
+    if (refs > 0) {
         printk("%s: Unregistering provider \"%s\" with %d references remaining.\n",
                __func__, module_name((*provider)->module), refs);
         rc = -EBUSY;
@@ -349,17 +350,18 @@ dpusm_provider_get(dpusm_t *dpusm, const char *name) {
     read_lock(&dpusm->lock);
     dpusm_ph_t **provider = find_provider(dpusm, name);
     if (provider) {
+        struct module *module = (*provider)->module;
+
         /* make sure provider can't be unloaded before user */
-        if (!try_module_get((*provider)->module)) {
+        if (!try_module_get(module)) {
             printk("Error: Could not increment reference count of %s\n", name);
             return NULL;
         }
 
-        atomic_inc(&(*provider)->refs);
         atomic_inc(&dpusm->active);
 
         printk("%s: User has been given a handle to \"%s\" (%p) (now %d users).\n",
-               __func__, name, *provider, atomic_read(&(*provider)->refs));
+               __func__, name, *provider, module_refcount(module));
 
         if ((*provider)->funcs->at_connect) {
             (*provider)->funcs->at_connect();
@@ -384,14 +386,13 @@ dpusm_provider_put(dpusm_t *dpusm, void *handle) {
 
     struct module *module = (*provider)->module;
 
-    if (!atomic_read(&(*provider)->refs)) {
+    if (!module_refcount(module)) {
         printk("%s Error: Cannot decrement provider \"%s\" user count already at 0.\n",
                __func__, module_name(module));
         return DPUSM_ERROR;
     }
 
     module_put(module);
-    atomic_dec(&(*provider)->refs);
     atomic_dec(&dpusm->active);
 
     if ((*provider)->funcs) { /* provider might have been invalidated */
@@ -401,7 +402,7 @@ dpusm_provider_put(dpusm_t *dpusm, void *handle) {
     }
 
     printk("%s: User has returned a handle to \"%s\" (%p) (now %d users).\n",
-           __func__, module_name(module), *provider, atomic_read(&(*provider)->refs));
+           __func__, module_name(module), *provider, module_refcount(module));
     return DPUSM_OK;
 }
 
@@ -422,7 +423,7 @@ void dpusm_provider_invalidate(dpusm_t *dpusm, const char *name) {
         (*provider)->funcs = NULL;
         memset(&(*provider)->capabilities, 0, sizeof((*provider)->capabilities));
         printk("%s: Provider \"%s\" has been invalidated with %d users active.\n",
-               __func__, name, atomic_read(&(*provider)->refs));
+               __func__, name, module_refcount((*provider)->module));
         /* not decrementing module reference count here - provider is still registered */
     }
     else {

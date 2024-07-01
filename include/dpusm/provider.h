@@ -13,7 +13,6 @@ typedef struct dpusm_provider_handle {
     struct module *module;
     dpusm_pc_t capabilities; /* constant set of capabilities */
     const dpusm_pf_t *funcs; /* reference to a struct */
-    atomic_t refs;           /* how many users are holding this provider */
     struct list_head list;
     struct dpusm_provider_handle *self;
 } dpusm_ph_t;
