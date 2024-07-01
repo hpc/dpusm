@@ -6,7 +6,7 @@
 
 static int __init
 dpusm_bsd_provider_init(void) {
-    const int rc = dpusm_register_bsd(module_name(THIS_MODULE),
+    const int rc = dpusm_register_bsd(THIS_MODULE,
         &example_dpusm_provider_functions);
     printk("%s init: %d\n", module_name(THIS_MODULE), rc);
     return rc;
@@ -14,7 +14,7 @@ dpusm_bsd_provider_init(void) {
 
 static void __exit
 dpusm_bsd_provider_exit(void) {
-    dpusm_unregister_bsd(module_name(THIS_MODULE));
+    dpusm_unregister_bsd(THIS_MODULE);
 
     printk("%s exit\n", module_name(THIS_MODULE));
 }

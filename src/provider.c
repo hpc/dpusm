@@ -84,7 +84,7 @@ find_provider(dpusm_t *dpusm, const char *name) {
     struct list_head *it = NULL;
     list_for_each(it, &dpusm->providers) {
         dpusm_ph_t *dpusmph = list_entry(it, dpusm_ph_t, list);
-        const char *p_name = dpusmph->name;
+        const char *p_name = module_name(dpusmph->module);
         const size_t p_name_len = strlen(p_name);
         if (name_len == p_name_len) {
             if (memcmp(name, p_name, p_name_len) == 0) {
@@ -108,8 +108,9 @@ static void print_supported(const char *name, const char *func)
 }
 
 static dpusm_ph_t *
-dpusmph_init(const char *name, const dpusm_pf_t *funcs)
+dpusmph_init(struct module *module, const dpusm_pf_t *funcs)
 {
+    const char *name = module_name(module);
     dpusm_ph_t *dpusmph = dpusm_mem_alloc(sizeof(dpusm_ph_t));
     if (dpusmph) {
         /* fill in capabilities bitmasks */
@@ -223,7 +224,7 @@ dpusmph_init(const char *name, const dpusm_pf_t *funcs)
             dpusmph->capabilities.io &= ~DPUSM_IO_DISK;
         }
 
-        dpusmph->name = name;
+        dpusmph->module = module;
         dpusmph->funcs = funcs;
         dpusmph->self = dpusmph;
         atomic_set(&dpusmph->refs, 0);
@@ -234,7 +235,7 @@ dpusmph_init(const char *name, const dpusm_pf_t *funcs)
 
 /* add a new provider */
 int
-dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *funcs) {
+dpusm_provider_register(dpusm_t *dpusm, struct module *module, const dpusm_pf_t *funcs) {
     const int rc = dpusm_provider_sane_at_load(funcs);
     if (rc != DPUSM_OK) {
         static const size_t max =
@@ -258,7 +259,7 @@ dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *func
 
         printk("%s: DPUSM Provider \"%s\" does not provide "
                "a valid set of functions. Bad function groups: %s\n",
-               __func__, name, buf);
+               __func__, module_name(module), buf);
 
         dpusm_mem_free(buf, size);
 
@@ -267,15 +268,15 @@ dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *func
 
     dpusm_provider_write_lock(dpusm);
 
-    dpusm_ph_t **found = find_provider(dpusm, name);
+    dpusm_ph_t **found = find_provider(dpusm, module_name(module));
     if (found) {
         printk("%s: DPUSM Provider with the name \"%s\" (%p) already exists. %zu providers registered.\n",
-               __func__, name, *found, dpusm->count);
+               __func__, module_name(module), *found, dpusm->count);
         dpusm_provider_write_unlock(dpusm);
         return -EEXIST;
     }
 
-    dpusm_ph_t *provider = dpusmph_init(name, funcs);
+    dpusm_ph_t *provider = dpusmph_init(module, funcs);
     if (!provider) {
         dpusm_provider_write_unlock(dpusm);
         return -ECANCELED;
@@ -284,7 +285,7 @@ dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *func
     list_add(&provider->list, &dpusm->providers);
     dpusm->count++;
     printk("%s: DPUSM Provider \"%s\" (%p) added. Now %zu providers registered.\n",
-           __func__, name, provider, dpusm->count);
+           __func__, module_name(module), provider, dpusm->count);
 
     dpusm_provider_write_unlock(dpusm);
 
@@ -292,8 +293,6 @@ dpusm_provider_register(dpusm_t *dpusm, const char *name, const dpusm_pf_t *func
 }
 
 /* remove provider from list */
-/* can't prevent provider module from unloading */
-/* locking is done by caller */
 int
 dpusm_provider_unregister_handle(dpusm_t *dpusm, dpusm_ph_t **provider) {
     if (!provider || !*provider) {
@@ -305,7 +304,7 @@ dpusm_provider_unregister_handle(dpusm_t *dpusm, dpusm_ph_t **provider) {
     const int refs = atomic_read(&(*provider)->refs);
     if (refs) {
         printk("%s: Unregistering provider \"%s\" with %d references remaining.\n",
-               __func__, (*provider)->name, refs);
+               __func__, module_name((*provider)->module), refs);
         rc = -EBUSY;
     }
 
@@ -321,19 +320,19 @@ dpusm_provider_unregister_handle(dpusm_t *dpusm, dpusm_ph_t **provider) {
 }
 
 int
-dpusm_provider_unregister(dpusm_t *dpusm, const char *name) {
+dpusm_provider_unregister(dpusm_t *dpusm, struct module *module) {
     dpusm_provider_write_lock(dpusm);
 
-    dpusm_ph_t **provider = find_provider(dpusm, name);
+    dpusm_ph_t **provider = find_provider(dpusm, module_name(module));
     if (!provider) {
-        printk("%s: Could not find provider with name \"%s\"\n", __func__, name);
+        printk("%s: Could not find provider with name \"%s\"\n", __func__, module_name(module));
         dpusm_provider_write_unlock(dpusm);
         return DPUSM_ERROR;
     }
 
     void *addr = *provider;
     const int rc = dpusm_provider_unregister_handle(dpusm, provider);
-    printk("%s: Unregistered \"%s\" (%p): %d\n", __func__, name, addr, rc);
+    printk("%s: Unregistered \"%s\" (%p): %d\n", __func__, module_name(module), addr, rc);
 
     dpusm_provider_write_unlock(dpusm);
     return rc;
@@ -350,10 +349,17 @@ dpusm_provider_get(dpusm_t *dpusm, const char *name) {
     read_lock(&dpusm->lock);
     dpusm_ph_t **provider = find_provider(dpusm, name);
     if (provider) {
+        /* make sure provider can't be unloaded before user */
+        if (!try_module_get((*provider)->module)) {
+            printk("Error: Could not increment reference count of %s\n", name);
+            return NULL;
+        }
+
         atomic_inc(&(*provider)->refs);
         atomic_inc(&dpusm->active);
+
         printk("%s: User has been given a handle to \"%s\" (%p) (now %d users).\n",
-               __func__, (*provider)->name, *provider, atomic_read(&(*provider)->refs));
+               __func__, name, *provider, atomic_read(&(*provider)->refs));
 
         if ((*provider)->funcs->at_connect) {
             (*provider)->funcs->at_connect();
@@ -376,12 +382,15 @@ dpusm_provider_put(dpusm_t *dpusm, void *handle) {
         return DPUSM_ERROR;
     }
 
+    struct module *module = (*provider)->module;
+
     if (!atomic_read(&(*provider)->refs)) {
         printk("%s Error: Cannot decrement provider \"%s\" user count already at 0.\n",
-               __func__, (*provider)->name);
+               __func__, module_name(module));
         return DPUSM_ERROR;
     }
 
+    module_put(module);
     atomic_dec(&(*provider)->refs);
     atomic_dec(&dpusm->active);
 
@@ -392,7 +401,7 @@ dpusm_provider_put(dpusm_t *dpusm, void *handle) {
     }
 
     printk("%s: User has returned a handle to \"%s\" (%p) (now %d users).\n",
-           __func__, (*provider)->name, *provider, atomic_read(&(*provider)->refs));
+           __func__, module_name(module), *provider, atomic_read(&(*provider)->refs));
     return DPUSM_OK;
 }
 
@@ -414,6 +423,7 @@ void dpusm_provider_invalidate(dpusm_t *dpusm, const char *name) {
         memset(&(*provider)->capabilities, 0, sizeof((*provider)->capabilities));
         printk("%s: Provider \"%s\" has been invalidated with %d users active.\n",
                __func__, name, atomic_read(&(*provider)->refs));
+        /* not decrementing module reference count here - provider is still registered */
     }
     else {
         printk("%s: Error: Did not find provider \"%s\"\n",

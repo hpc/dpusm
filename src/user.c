@@ -78,7 +78,7 @@ dpusm_provider_sane(dpusm_ph_t **provider) {
     }
 
     if (!FUNCS(provider)) {
-        printk("Error: Invalidated provider: %s\n", (*provider)->name);
+        printk("Error: Invalidated provider: %s\n", module_name((*provider)->module));
         return DPUSM_PROVIDER_INVALIDATED;
     }
 
@@ -144,7 +144,7 @@ dpusm_get_provider(const char *name) {
 static const char *
 dpusm_get_provider_name(void *provider) {
     dpusm_ph_t **dpusmph = (dpusm_ph_t **) provider;
-    return (dpusmph && *dpusmph)?(*dpusmph)->name:NULL;
+    return (dpusmph && *dpusmph)?module_name((*dpusmph)->module):NULL;
 }
 
 static int

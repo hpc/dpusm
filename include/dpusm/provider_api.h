@@ -183,10 +183,10 @@ typedef struct dpusm_provider_functions {
 } dpusm_pf_t;
 
 /* returns -ERRNO instead of DPUSM_* */
-int dpusm_register_bsd(const char *name, const dpusm_pf_t *funcs);
-int dpusm_unregister_bsd(const char *name);
-int dpusm_register_gpl(const char *name, const dpusm_pf_t *funcs);
-int dpusm_unregister_gpl(const char *name);
+int dpusm_register_bsd(struct module *module, const dpusm_pf_t *funcs);
+int dpusm_unregister_bsd(struct module *module);
+int dpusm_register_gpl(struct module *module, const dpusm_pf_t *funcs);
+int dpusm_unregister_gpl(struct module *module);
 
 /*
  * call when backing DPU goes down unexpectedly

@@ -11,13 +11,13 @@
 static dpusm_t dpusm;
 
 int
-dpusm_register_bsd(const char *name, const dpusm_pf_t *funcs) {
-    return dpusm_provider_register(&dpusm, name, funcs);
+dpusm_register_bsd(struct module *module, const dpusm_pf_t *funcs) {
+    return dpusm_provider_register(&dpusm, module, funcs);
 }
 
 int
-dpusm_unregister_bsd(const char *name) {
-    return dpusm_provider_unregister(&dpusm, name);
+dpusm_unregister_bsd(struct module *module) {
+    return dpusm_provider_unregister(&dpusm, module);
 }
 
 /* provider facing functions */
@@ -25,13 +25,13 @@ EXPORT_SYMBOL(dpusm_register_bsd);
 EXPORT_SYMBOL(dpusm_unregister_bsd);
 
 int
-dpusm_register_gpl(const char *name, const dpusm_pf_t *funcs) {
-    return dpusm_provider_register(&dpusm, name, funcs);
+dpusm_register_gpl(struct module *module, const dpusm_pf_t *funcs) {
+    return dpusm_provider_register(&dpusm, module, funcs);
 }
 
 int
-dpusm_unregister_gpl(const char *name) {
-    return dpusm_provider_unregister(&dpusm, name);
+dpusm_unregister_gpl(struct module *module) {
+    return dpusm_provider_unregister(&dpusm, module);
 }
 
 /* provider facing functions */
@@ -76,8 +76,7 @@ dpusm_init(void) {
 }
 
 static void __exit
-dpusm_exit(void)
-{
+dpusm_exit(void) {
     dpusm_provider_write_lock(&dpusm);
 
     const int active = atomic_read(&dpusm.active);

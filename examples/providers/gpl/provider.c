@@ -6,7 +6,7 @@
 
 static int __init
 dpusm_gpl_provider_init(void) {
-    const int rc = dpusm_register_gpl(module_name(THIS_MODULE),
+    const int rc = dpusm_register_gpl(THIS_MODULE,
         &example_dpusm_provider_functions);
     printk("%s init: %d\n", module_name(THIS_MODULE), rc);
     return rc;
@@ -14,7 +14,7 @@ dpusm_gpl_provider_init(void) {
 
 static void __exit
 dpusm_gpl_provider_exit(void) {
-    dpusm_unregister_gpl(module_name(THIS_MODULE));
+    dpusm_unregister_gpl(THIS_MODULE);
 
     printk("%s exit\n", module_name(THIS_MODULE));
 }
