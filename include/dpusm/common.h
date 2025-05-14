@@ -24,7 +24,7 @@ typedef enum {
     DPUSM_OPTIONAL_ZERO_FILL             = 1 << 5,
     DPUSM_OPTIONAL_ALL_ZEROS             = 1 << 6,
 
-    DPUSM_OPTIONAL_MAX                   = 1 << 5,
+    DPUSM_OPTIONAL_MAX                   = 1 << 7,
 } dpusm_optional_t;
 
 extern const char *DPUSM_OPTIONAL_STR[];
