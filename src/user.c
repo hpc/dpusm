@@ -432,6 +432,12 @@ dpusm_checksum(dpusm_checksum_t alg, dpusm_checksum_byteorder_t order,
 static int dpusm_raid_can_compute(void *provider, size_t nparity, size_t ndata,
     size_t *col_sizes, int rec) {
     CHECK_PROVIDER(provider, DPUSM_ERROR);
+
+    /* raid is optional */
+    if (!FUNCS(provider)->raid.can_compute) {
+        return DPUSM_NOT_IMPLEMENTED;
+    }
+
     return FUNCS(provider)->raid.can_compute(nparity, ndata, col_sizes, rec);
 }
 
