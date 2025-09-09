@@ -43,6 +43,10 @@ const char *DPUSM_DECOMPRESS_STR[] = {
 const char *DPUSM_CHECKSUM_STR[] = {
     "Fletcher 2",
     "Fletcher 4",
+    "SHA224",
+    "SHA256",
+    "SHA384",
+    "SHA512",
 };
 
 const char *DPUSM_CHECKSUM_BYTEORDER_STR[] = {
