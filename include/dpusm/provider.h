@@ -32,8 +32,13 @@ int dpusm_provider_register(dpusm_t *dpusm, struct module *module, const dpusm_p
 int dpusm_provider_unregister_handle(dpusm_t *dpusm, dpusm_ph_t **provider);
 int dpusm_provider_unregister(dpusm_t *dpusm, struct module *module);
 
+/* called by dpusm_get and dpusm_put */
 dpusm_ph_t **dpusm_provider_get(dpusm_t *dpusm, const char *name);
 int dpusm_provider_put(dpusm_t *dpusm, void *handle);
+
+/* called by user.c */
+void *dpusm_get(const char *name);
+int dpusm_put(void *handle);
 
 /*
  * call when backing DPU goes down unexpectedly

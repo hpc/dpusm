@@ -4,10 +4,6 @@
 
 #define FUNCS(dpusmph) ((* (dpusm_ph_t **) dpusmph)->funcs)
 
-/* defined in dpusm.c */
-extern void *dpusm_get(const char *name);
-extern int dpusm_put(void *handle);
-
 #ifdef DEBUG
 typedef enum dpusm_handle_type {
     DPUSM_HANDLE_REAL,
