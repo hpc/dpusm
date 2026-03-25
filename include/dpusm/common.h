@@ -20,11 +20,12 @@ typedef enum {
     DPUSM_OPTIONAL_COPY_TO_PTR           = 1 << 1,
     DPUSM_OPTIONAL_COPY_FROM_SCATTERLIST = 1 << 2,
     DPUSM_OPTIONAL_COPY_TO_SCATTERLIST   = 1 << 3,
-    DPUSM_OPTIONAL_MEM_STATS             = 1 << 4,
-    DPUSM_OPTIONAL_ZERO_FILL             = 1 << 5,
-    DPUSM_OPTIONAL_ALL_ZEROS             = 1 << 6,
+    DPUSM_OPTIONAL_ASSOCIATE_HANDLE      = 1 << 4,
+    DPUSM_OPTIONAL_MEM_STATS             = 1 << 5,
+    DPUSM_OPTIONAL_ZERO_FILL             = 1 << 6,
+    DPUSM_OPTIONAL_ALL_ZEROS             = 1 << 7,
 
-    DPUSM_OPTIONAL_MAX                   = 1 << 7,
+    DPUSM_OPTIONAL_MAX                   = 1 << 8,
 } dpusm_optional_t;
 
 extern const char *DPUSM_OPTIONAL_STR[];

@@ -134,6 +134,11 @@ dpusmph_init(struct module *module, const dpusm_pf_t *funcs)
             print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_COPY_TO_SCATTERLIST));
         }
 
+        if (funcs->associate_handle) {
+            dpusmph->capabilities.optional |= DPUSM_OPTIONAL_ASSOCIATE_HANDLE;
+            print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_ASSOCIATE_HANDLE));
+        }
+
         if (funcs->mem_stats) {
             dpusmph->capabilities.optional |= DPUSM_OPTIONAL_MEM_STATS;
             print_supported(name, enum2str(DPUSM_OPTIONAL_STR, DPUSM_OPTIONAL_MEM_STATS));

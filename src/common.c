@@ -7,6 +7,7 @@ const char *DPUSM_OPTIONAL_STR[] = {
     "copy_to_ptr",
     "copy_from_scatterlist",
     "copy_to_scatterlist",
+    "associate_handle",
     "mem_stats",
     "zero_fill",
     "all_zeros",
