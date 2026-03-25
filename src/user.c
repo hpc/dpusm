@@ -210,6 +210,15 @@ dpusm_free(void *handle) {
 }
 
 static int
+dpusm_associate_handle(void *handle, void *ptr) {
+    CHECK_HANDLE(handle, dpusmh, DPUSM_ERROR);
+    if (!FUNCS(dpusmh->provider)->associate_handle) {
+        return (DPUSM_NOT_IMPLEMENTED);
+    }
+    return (FUNCS(dpusmh->provider)->associate_handle(dpusmh->handle, ptr));
+}
+
+static int
 dpusm_copy_from_generic(dpusm_mv_t *mv, const void *buf, size_t size) {
     if (!mv || !buf) {
         return DPUSM_ERROR;
@@ -677,54 +686,55 @@ dpusm_disk_close(void *disk) {
 }
 
 static const dpusm_uf_t user_functions = {
-    .get           = dpusm_get_provider,
-    .get_name      = dpusm_get_provider_name,
-    .put           = dpusm_put_provider,
-    .extract       = dpusm_extract_provider,
-    .capabilities  = dpusm_get_capabilities,
-    .alloc         = dpusm_alloc,
-    .alloc_ref     = dpusm_alloc_ref,
-    .get_size      = dpusm_get_size,
-    .free          = dpusm_free,
-    .copy          = {
-                         .from = {
+    .get              = dpusm_get_provider,
+    .get_name         = dpusm_get_provider_name,
+    .put              = dpusm_put_provider,
+    .extract          = dpusm_extract_provider,
+    .capabilities     = dpusm_get_capabilities,
+    .alloc            = dpusm_alloc,
+    .alloc_ref        = dpusm_alloc_ref,
+    .get_size         = dpusm_get_size,
+    .free             = dpusm_free,
+    .associate_handle = dpusm_associate_handle,
+    .copy             = {
+                            .from = {
                                      .generic     = dpusm_copy_from_generic,
                                      .ptr         = dpusm_copy_from_ptr,
                                      .scatterlist = dpusm_copy_from_scatterlist,
-                                 },
-                         .to   = {
+                                    },
+                            .to   = {
                                      .generic     = dpusm_copy_to_generic,
                                      .ptr         = dpusm_copy_to_ptr,
                                      .scatterlist = dpusm_copy_to_scatterlist,
-                                 },
+                                    },
                      },
-    .mem_stats     = dpusm_provider_mem_stats,
-    .zero_fill     = dpusm_zero_fill,
-    .all_zeros     = dpusm_all_zeros,
-    .compress      = dpusm_compress,
-    .decompress    = dpusm_decompress,
-    .checksum      = dpusm_checksum,
-    .raid          = {
-                         .can_compute = dpusm_raid_can_compute,
-                         .alloc       = dpusm_raid_alloc,
-                         .set_column  = dpusm_raid_set_column,
-                         .free        = dpusm_raid_free,
-                         .gen         = dpusm_raid_gen,
-                         .cmp         = dpusm_raid_cmp,
-                         .rec         = dpusm_raid_rec,
-                     },
-    .file          = {
-                         .open        = dpusm_file_open,
-                         .write       = dpusm_file_write,
-                         .close       = dpusm_file_close,
-                     },
-    .disk          = {
-                         .open        = dpusm_disk_open,
-                         .invalidate  = dpusm_disk_invalidate,
-                         .write       = dpusm_disk_write,
-                         .flush       = dpusm_disk_flush,
-                         .close       = dpusm_disk_close,
-                     },
+    .mem_stats        = dpusm_provider_mem_stats,
+    .zero_fill        = dpusm_zero_fill,
+    .all_zeros        = dpusm_all_zeros,
+    .compress         = dpusm_compress,
+    .decompress       = dpusm_decompress,
+    .checksum         = dpusm_checksum,
+    .raid             = {
+                            .can_compute = dpusm_raid_can_compute,
+                            .alloc       = dpusm_raid_alloc,
+                            .set_column  = dpusm_raid_set_column,
+                            .free        = dpusm_raid_free,
+                            .gen         = dpusm_raid_gen,
+                            .cmp         = dpusm_raid_cmp,
+                            .rec         = dpusm_raid_rec,
+                        },
+    .file             = {
+                            .open        = dpusm_file_open,
+                            .write       = dpusm_file_write,
+                            .close       = dpusm_file_close,
+                        },
+    .disk             = {
+                            .open        = dpusm_disk_open,
+                            .invalidate  = dpusm_disk_invalidate,
+                            .write       = dpusm_disk_write,
+                            .flush       = dpusm_disk_flush,
+                            .close       = dpusm_disk_close,
+                        },
 };
 
 const dpusm_uf_t *

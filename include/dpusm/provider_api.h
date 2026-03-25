@@ -41,6 +41,9 @@ typedef struct dpusm_provider_functions {
     /* free an offloader handle */
     int (*free)(void *handle);
 
+    /* associate a pointer with a pre-existing handle */
+    int (*associate_handle)(void *handle, void *ptr);
+
     struct {
         /* memory -> offloader */
         struct {
