@@ -165,8 +165,8 @@ typedef struct dpusm_provider_functions {
         void *(*open)(const char *path, int flags, int mode);
         /* returns E errors */
         int (*write)(void *fp_handle, void *data, size_t size,
-            size_t trailing_zeros, loff_t offset, ssize_t *resid,
-            int *err);
+            size_t trailing_zeros, loff_t offset, uint8_t ashift,
+            ssize_t *resid, int *err);
         void (*close)(void *fp_handle);
     } file;
 

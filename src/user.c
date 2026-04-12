@@ -569,7 +569,8 @@ dpusm_file_open(void *provider, const char *path, int flags, int mode) {
 
 static int
 dpusm_file_write(void *fp_handle, void *data, size_t count,
-    size_t trailing_zeros, loff_t offset, ssize_t *resid, int *err) {
+    size_t trailing_zeros, loff_t offset, uint8_t ashift,
+    ssize_t *resid, int *err) {
     SAME_PROVIDERS(fp_handle, fp_dpusmh, data, dpusmh, EIO);
 
     /* file operations are optional */
@@ -578,7 +579,7 @@ dpusm_file_write(void *fp_handle, void *data, size_t count,
     }
 
     return FUNCS(fp_dpusmh->provider)->file.write(fp_dpusmh->handle,
-        dpusmh->handle, count, trailing_zeros, offset, resid, err);
+        dpusmh->handle, count, trailing_zeros, offset, ashift, resid, err);
 }
 
 static int
